@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="zh-Hant" data-prototype="true">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#E0E6CD" />
+    <title>檔案整理器 | 待確認檔案</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bark: #825b3d;
+        --mint: #99dcc5;
+        --mist: #e0e6cd;
+        --gold: #b79937;
+        --brick: #b33d2d;
+        --ink: #322c25;
+        --muted: #62594f;
+        --paper: #fffefa;
+        --line: #dedfd3;
+        --surface: #f5f6ef;
+        --gold-ink: #66510f;
+        --mint-ink: #21483d;
+        --shadow: 0 5px 9px rgb(52 43 34 / 18%);
+        font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        font-optical-sizing: auto;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-width: 320px;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 100vh;
+        overflow: hidden;
+        background: var(--mist);
+        color: var(--ink);
+        font-size: 14px;
+      }
+      button, input { font: inherit; }
+      button { color: inherit; }
+      button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+        outline: 3px solid var(--bark);
+        outline-offset: 2px;
+      }
+      ::selection { color: var(--ink); background: var(--mint); }
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-track { background: var(--mist); }
+      ::-webkit-scrollbar-thumb { background: #92816f; border: 2px solid var(--mist); border-radius: 8px; }
+
+      .app-shell { display: grid; grid-template-columns: 224px minmax(0, 1fr); height: calc(100vh - 72px); height: calc(100dvh - 72px); min-height: 0; overflow: hidden; }
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+        overflow-y: auto;
+        padding: 25px 14px 16px;
+        color: #fffefa;
+        background: var(--bark);
+      }
+      .brand { display: flex; align-items: center; gap: 11px; padding: 0 9px 30px; }
+      .brand-mark { display: grid; grid-template-columns: 11px 11px; gap: 3px; width: 29px; height: 29px; place-content: center; background: var(--mist); border-radius: 7px; }
+      .brand-mark span { width: 10px; height: 7px; background: var(--bark); border-radius: 2px 2px 1px 1px; }
+      .brand-mark span:nth-child(2), .brand-mark span:nth-child(3) { background: #678f7d; }
+      .brand-name { font-size: 15px; font-weight: 650; letter-spacing: 0; }
+      .nav-label { padding: 0 11px 9px; color: #f0dfd0; font-size: 11px; font-weight: 650; }
+      .nav-list { display: grid; gap: 4px; }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        width: 100%;
+        padding: 11px 12px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: #f6eee7;
+        text-align: left;
+        cursor: pointer;
+      }
+      .nav-item:hover { background: rgb(255 255 255 / 10%); }
+      .nav-item.active { background: var(--mist); color: var(--ink); font-weight: 650; }
+      .nav-item .icon { color: currentColor; }
+      .nav-count { margin-left: auto; min-width: 22px; text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+      .sidebar-spacer { flex: 1; }
+      .schedule-note { margin: 18px 4px 10px; padding: 13px 12px; border-top: 1px solid rgb(255 255 255 / 28%); color: #f7eee4; }
+      .schedule-title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+      .schedule-note p { margin: 8px 0 0 24px; color: #f0dfd0; font-size: 12px; line-height: 1.5; }
+      .local-note { padding: 12px 10px 0; border-top: 1px solid rgb(255 255 255 / 28%); color: #f0dfd0; font-size: 11px; line-height: 1.5; }
+
+      .main-shell { min-width: 0; min-height: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--surface); }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 58px;
+        padding: 0 32px;
+        border-bottom: 1px solid var(--line);
+        background: var(--paper);
+      }
+      .topbar-path { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+      .topbar-path strong { color: var(--ink); font-weight: 600; }
+      .topbar-right { display: flex; align-items: center; gap: 15px; }
+      .demo-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 4px; color: var(--mint-ink); background: #d7eee4; font-size: 11px; font-weight: 650; }
+      .demo-dot { width: 7px; height: 7px; border-radius: 50%; background: #38745e; }
+      .machine-label { color: var(--muted); font-size: 12px; }
+      .workspace { max-width: 1600px; margin: 0 auto; padding: 29px 34px 112px; }
+
+      .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+      .page-head h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 680; letter-spacing: 0; }
+      .page-head p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+      .head-actions { display: flex; align-items: center; gap: 10px; }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 38px;
+        padding: 0 13px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--paper);
+        color: var(--ink);
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .button:hover { background: #f1f0e9; }
+      .button.primary { border-color: var(--bark); background: var(--bark); color: #fffefa; }
+      .button.primary:hover { background: #6f4a31; }
+      .button:disabled { opacity: .48; cursor: not-allowed; }
+      .button.danger-quiet { color: var(--brick); }
+      .icon { display: inline-block; flex: 0 0 auto; width: 16px; height: 16px; background: currentColor; mask: var(--icon) center / contain no-repeat; }
+
+      .source-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        min-height: 52px;
+        padding: 10px 13px;
+        border: 1px solid #d5dac8;
+        border-radius: 6px;
+        background: #edf0e3;
+      }
+      .source-path { display: flex; min-width: 0; align-items: center; gap: 9px; color: var(--bark); }
+      .source-path strong { overflow: hidden; color: var(--ink); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+      .source-path code { color: var(--muted); font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; }
+      .scan-meta { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+
+      .summary-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 17px 0 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper); }
+      .summary-item { display: flex; align-items: baseline; gap: 8px; min-height: 56px; padding: 15px 17px; }
+      .summary-item + .summary-item { border-left: 1px solid var(--line); }
+      .summary-value { color: var(--bark); font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .summary-item.attention .summary-value { color: var(--gold-ink); }
+      .summary-item.problem .summary-value { color: var(--brick); }
+      .summary-label { color: var(--muted); font-size: 12px; }
+
+      .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+      .filter-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+      .filter-tab { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 11px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; }
+      .filter-tab:hover { background: #eaecdf; color: var(--ink); }
+      .filter-tab[aria-pressed="true"] { background: var(--bark); color: #fffefa; }
+      .filter-count { font-size: 11px; font-variant-numeric: tabular-nums; opacity: .8; }
+      .search-box { display: flex; align-items: center; gap: 8px; width: min(270px, 32vw); min-height: 36px; padding: 0 10px; border: 1px solid #cccdbf; border-radius: 6px; background: var(--paper); color: var(--muted); }
+      .search-box input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px; }
+      .search-box input::placeholder { color: #62594f; opacity: 1; }
+      .visible-count { color: var(--muted); font-size: 11px; white-space: nowrap; }
+
+      .variant-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 12px; }
+      .variant-heading h2 { margin: 0; font-size: 16px; font-weight: 650; }
+      .variant-heading p { margin: 0; color: var(--muted); font-size: 12px; }
+      .route-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px 22px; }
+      .route-lane { min-width: 0; border-top: 2px solid var(--bark); background: var(--paper); }
+      .route-lane-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 13px 10px; border-bottom: 1px solid var(--line); }
+      .route-lane-head h3 { margin: 0; font-size: 13px; font-weight: 650; }
+      .route-lane-head p { overflow: hidden; margin: 5px 0 0; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+      .lane-count { flex: 0 0 auto; min-width: 23px; padding: 3px 6px; border-radius: 4px; background: var(--mist); color: var(--bark); text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; }
+      .file-entry { min-width: 0; }
+      .file-entry[hidden] { display: none !important; }
+      .file-row { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 11px 13px; border-bottom: 1px solid #ecece5; }
+      .file-row:last-child { border-bottom: 0; }
+      .file-row.selected { background: #eef5ef; }
+      .file-row.needs-review { background: #fff9e8; }
+      .file-row.unmatched { background: #f6f6f0; }
+      .file-row input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--bark); }
+      .file-glyph { display: grid; flex: 0 0 34px; width: 34px; height: 38px; place-items: center; border: 1px solid #d6d4c9; border-radius: 4px; background: #fffefa; color: var(--bark); font-size: 11px; font-weight: 750; }
+      .file-glyph.pdf { border-color: #e5b3aa; color: var(--brick); }
+      .file-glyph.xlsx { border-color: #bad8ca; color: #356a53; }
+      .file-glyph.docx { border-color: #b9c9d8; color: #345b7a; }
+      .file-glyph.zip { border-color: #ddc989; color: var(--gold-ink); }
+      .file-main { flex: 1; min-width: 0; }
+      .file-name { display: block; overflow: hidden; color: var(--ink); font-size: 12px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
+      .file-subline { display: flex; flex-wrap: wrap; gap: 5px 9px; margin-top: 4px; color: var(--muted); font-size: 11px; }
+      .file-status { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; padding: 4px 7px; border-radius: 4px; background: #d8eee4; color: var(--mint-ink); font-size: 11px; font-weight: 650; white-space: nowrap; }
+      .file-status.review { background: #f1e8c9; color: var(--gold-ink); }
+      .file-status.problem { background: #f4dfda; color: #8c281c; }
+      .file-status.moved { background: #e6e5df; color: #51493f; }
+      .lane-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 13px; border-top: 1px solid var(--line); background: #f7f6ef; }
+      .lane-footer strong { font-size: 12px; }
+      .lane-footer span { color: var(--muted); font-size: 11px; }
+      .text-button { display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; border: 0; background: transparent; color: var(--bark); font-size: 11px; font-weight: 650; cursor: pointer; }
+      .text-button:hover { text-decoration: underline; text-underline-offset: 3px; }
+      .attention-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 17px; }
+      .attention-block { border-top: 1px solid var(--line); }
+      .attention-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 1px; }
+      .attention-head h3 { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 12px; font-weight: 650; }
+      .attention-head.warning h3 { color: var(--gold-ink); }
+      .attention-head.error h3 { color: #8c281c; }
+
+      .split-view { display: grid; grid-template-columns: minmax(340px, .92fr) minmax(360px, 1.08fr); min-height: 388px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); overflow: hidden; }
+      .queue-panel { min-width: 0; border-right: 1px solid var(--line); }
+      .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 0 13px; border-bottom: 1px solid var(--line); background: #f4f4ec; }
+      .panel-head strong { font-size: 12px; }
+      .panel-head span { color: var(--muted); font-size: 11px; }
+      .queue-list { max-height: 470px; overflow: auto; }
+      .queue-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 0; border-bottom: 1px solid #ecece5; background: transparent; text-align: left; cursor: pointer; }
+      .queue-item:hover { background: #f6f6ef; }
+      .queue-item.current { background: #eef5ef; box-shadow: inset 3px 0 0 var(--bark); }
+      .queue-item .file-main { pointer-events: none; }
+      .queue-item .file-glyph { pointer-events: none; }
+      .queue-item .file-status { pointer-events: none; }
+      .inspector { min-width: 0; padding: 18px 20px 20px; }
+      .inspector-title { display: flex; align-items: flex-start; gap: 13px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+      .inspector-title .file-glyph { flex-basis: 44px; width: 44px; height: 50px; font-size: 11px; }
+      .inspector-title h3 { margin: 2px 0 5px; overflow-wrap: anywhere; font-size: 16px; line-height: 1.35; font-weight: 650; }
+      .inspector-title p { margin: 0; color: var(--muted); font-size: 11px; }
+      .detail-section { padding: 13px 0; border-bottom: 1px solid var(--line); }
+      .detail-label { margin-bottom: 6px; color: var(--muted); font-size: 11px; font-weight: 650; }
+      .detail-value { color: var(--ink); font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; }
+      .match-box { display: flex; align-items: flex-start; gap: 9px; padding: 10px 11px; border-radius: 5px; background: #edf4ef; color: var(--mint-ink); }
+      .match-box.warning { background: #f8f0d9; color: var(--gold-ink); }
+      .match-box.problem { background: #f8e9e5; color: #8c281c; }
+      .detail-check { display: flex; align-items: center; gap: 9px; margin-top: 14px; color: var(--ink); font-size: 12px; font-weight: 600; }
+      .detail-check input { width: 16px; height: 16px; accent-color: var(--bark); }
+      .empty-detail { display: grid; min-height: 330px; place-content: center; color: var(--muted); text-align: center; }
+      .empty-detail .icon { width: 30px; height: 30px; margin: 0 auto 10px; color: var(--bark); }
+
+      .focus-layout { display: grid; grid-template-columns: minmax(0, 1fr) 248px; gap: 22px; align-items: start; }
+      .focus-main { min-width: 0; }
+      .focus-progress { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; color: var(--muted); font-size: 12px; }
+      .progress-track { height: 4px; margin-bottom: 18px; background: #d4d7c9; }
+      .progress-fill { height: 100%; background: var(--bark); transition: width 180ms ease-out; }
+      .focus-sheet { min-height: 315px; padding: 21px 24px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); }
+      .focus-file-head { display: flex; align-items: flex-start; gap: 15px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+      .focus-file-head .file-glyph { flex-basis: 52px; width: 52px; height: 60px; font-size: 11px; }
+      .focus-file-head h3 { margin: 4px 0 7px; overflow-wrap: anywhere; font-size: 19px; line-height: 1.3; font-weight: 650; }
+      .focus-file-head p { margin: 0; color: var(--muted); font-size: 12px; }
+      .focus-details { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; padding: 16px 0; }
+      .focus-details .detail-section { padding: 0; border: 0; }
+      .focus-route { display: flex; align-items: center; gap: 10px; margin-top: 5px; color: var(--bark); }
+      .focus-route .icon { width: 18px; height: 18px; }
+      .focus-route code { color: var(--ink); font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; overflow-wrap: anywhere; }
+      .focus-actions { display: flex; flex-wrap: wrap; gap: 9px; padding-top: 14px; border-top: 1px solid var(--line); }
+      .focus-rail { border-top: 2px solid var(--bark); background: var(--paper); }
+      .focus-rail-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+      .focus-rail-head strong { font-size: 12px; }
+      .focus-rail-head span { color: var(--muted); font-size: 11px; }
+      .focus-rail-item { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 11px; border: 0; border-bottom: 1px solid #ecece5; background: transparent; text-align: left; cursor: pointer; }
+      .focus-rail-item:hover, .focus-rail-item.current { background: #eef1e6; }
+      .focus-rail-item .file-glyph { flex-basis: 29px; width: 29px; height: 33px; font-size: 8px; }
+      .focus-rail-item .file-name { font-size: 11px; }
+      .focus-rail-item .file-subline { font-size: 11px; }
+
+      .action-bar { position: relative; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 19px 0 0; padding: 12px 14px; border: 1px solid #c9cbbb; border-radius: 6px; background: #fffefa; box-shadow: 0 5px 16px rgb(52 43 34 / 11%); }
+      .selection-summary { display: flex; align-items: center; gap: 9px; min-width: 0; }
+      .selection-number { display: grid; flex: 0 0 27px; width: 27px; height: 27px; place-items: center; border-radius: 50%; background: var(--bark); color: #fffefa; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .selection-copy strong { display: block; font-size: 12px; }
+      .selection-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+      .action-buttons { display: flex; align-items: center; gap: 8px; }
+
+      .prototype-switcher { position: fixed; z-index: 20; left: 50%; bottom: 17px; display: flex; align-items: center; gap: 9px; min-height: 48px; padding: 6px 9px; transform: translateX(-50%); border: 1px solid #d0cfc5; border-radius: 8px; background: #2f2923; color: #fffefa; box-shadow: var(--shadow); }
+      .prototype-switcher[hidden] { display: none; }
+      .switcher-title { padding: 0 5px; color: #e9dfd4; font-size: 11px; white-space: nowrap; }
+      .switcher-button { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #716458; border-radius: 5px; background: transparent; color: #fffefa; cursor: pointer; }
+      .switcher-button:hover { background: #514538; }
+      .switcher-current { min-width: 138px; text-align: center; }
+      .switcher-current strong { display: block; font-size: 11px; font-weight: 650; }
+      .switcher-current span { display: block; margin-top: 2px; color: #e0d5c9; font-size: 11px; }
+
+      dialog { width: min(480px, calc(100vw - 30px)); padding: 0; border: 1px solid #c9c7bc; border-radius: 8px; background: var(--paper); color: var(--ink); box-shadow: var(--shadow); }
+      dialog::backdrop { background: rgb(35 31 27 / 42%); }
+      .dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 19px 21px 14px; border-bottom: 1px solid var(--line); }
+      .dialog-head h2 { margin: 0; font-size: 18px; }
+      .dialog-head p { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+      .icon-button { display: grid; flex: 0 0 auto; width: 32px; height: 32px; place-items: center; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); cursor: pointer; }
+      .dialog-body { max-height: 50vh; overflow: auto; padding: 8px 21px 16px; }
+      .dialog-file { display: flex; justify-content: space-between; gap: 15px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+      .dialog-file strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
+      .dialog-file span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+      .dialog-note { display: flex; gap: 9px; margin-top: 14px; padding: 10px; border-radius: 5px; background: #f1efdf; color: var(--gold-ink); font-size: 11px; line-height: 1.5; }
+      .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; padding: 13px 21px 18px; }
+      #rule-dialog { width: min(600px, calc(100vw - 30px)); max-height: calc(100dvh - 30px); overflow: auto; }
+      .rule-form { display: grid; gap: 14px; padding: 15px 21px; border-bottom: 1px solid var(--line); }
+      .rule-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .rule-field { display: grid; gap: 6px; min-width: 0; color: var(--ink); font-size: 12px; font-weight: 600; }
+      .rule-field.wide { grid-column: 1 / -1; }
+      .rule-field input, .rule-field select { width: 100%; min-width: 0; min-height: 38px; padding: 0 10px; border: 1px solid #cccdbf; border-radius: 6px; background: var(--paper); color: var(--ink); font-size: 12px; font-weight: 400; }
+      .folder-picker-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+      .folder-picker-row input { min-width: 0; }
+      .folder-picker-row input::placeholder { color: #62594f; opacity: 1; }
+      .rule-field input::placeholder { color: #62594f; opacity: 1; }
+      .rule-field small { color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.4; }
+      .rule-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .rule-form-note { max-width: 36ch; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .rule-list-section { padding: 14px 21px 17px; }
+      .rule-list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+      .rule-list-head strong { font-size: 12px; }
+      .rule-list-head span { color: var(--muted); font-size: 12px; }
+      .rule-list { display: grid; max-height: 190px; overflow: auto; }
+      .rule-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+      .rule-row strong { display: block; font-size: 12px; }
+      .rule-row p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+      .rule-row .file-status { grid-column: 2; grid-row: 1 / span 2; }
+        .history-filters { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(150px, .7fr) minmax(220px, 1.4fr) auto; gap: 12px; align-items: end; margin: 18px 0 15px; padding: 14px; border: 1px solid var(--line); background: var(--paper); }
+        .history-filter { display: grid; gap: 6px; min-width: 0; color: var(--muted); font-size: 11px; font-weight: 650; }
+        .history-filter input, .history-filter select { width: 100%; min-width: 0; min-height: 36px; padding: 0 9px; border: 1px solid #cccdbf; border-radius: 6px; background: var(--paper); color: var(--ink); font-size: 12px; }
+        .history-count { margin: 0 0 8px; color: var(--muted); font-size: 12px; }
+        .history-list { border-top: 1px solid var(--line); background: var(--paper); }
+        .history-record { display: grid; grid-template-columns: minmax(180px, .9fr) minmax(270px, 1.4fr) auto; gap: 16px; align-items: center; padding: 13px 15px; border-bottom: 1px solid var(--line); }
+        .history-file { min-width: 0; }
+        .history-file strong { display: block; overflow: hidden; color: var(--ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+        .history-file span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+        .history-route { display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1.2fr); gap: 8px; align-items: center; min-width: 0; color: var(--muted); font-size: 11px; }
+        .history-route span { overflow-wrap: anywhere; }
+        .history-route .icon { color: var(--bark); }
+        .history-status { justify-self: end; }
+        .history-empty { display: grid; min-height: 220px; place-content: center; padding: 24px; color: var(--muted); text-align: center; }
+        .history-empty .icon { width: 26px; height: 26px; margin: 0 auto 10px; color: var(--bark); }
+        .history-empty strong { color: var(--ink); font-size: 14px; }
+        .history-empty p { max-width: 44ch; margin: 6px auto 0; font-size: 12px; line-height: 1.5; }
+      .toast { position: fixed; z-index: 30; right: 24px; bottom: 80px; display: flex; align-items: center; gap: 9px; max-width: min(470px, calc(100vw - 32px)); padding: 11px 13px; border: 1px solid #c9cbbb; border-radius: 6px; background: var(--paper); box-shadow: var(--shadow); color: var(--ink); font-size: 12px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity 140ms ease-out, transform 140ms ease-out; }
+      .toast.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+      .toast .text-button { margin-left: auto; }
+      .view-enter { animation: view-enter 190ms cubic-bezier(.16, 1, .3, 1) both; }
+      @keyframes view-enter { from { opacity: .5; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+      @media (max-width: 1050px) {
+        .app-shell { grid-template-columns: 190px minmax(0, 1fr); }
+        .workspace { padding-right: 23px; padding-left: 23px; }
+        .route-grid { gap: 13px; }
+        .split-view { grid-template-columns: minmax(280px, .9fr) minmax(300px, 1.1fr); }
+        .focus-layout { grid-template-columns: minmax(0, 1fr) 210px; gap: 15px; }
+      }
+      @media (max-width: 780px) {
+        .app-shell { display: flex; flex-direction: column; height: calc(100vh - 66px); height: calc(100dvh - 66px); min-height: 0; overflow: hidden; }
+        .sidebar { min-height: 0; height: auto; overflow: visible; padding: 10px 13px; }
+        .brand { padding: 0 3px 10px; }
+        .nav-label, .sidebar-spacer, .schedule-note, .local-note { display: none; }
+        .nav-list { display: flex; gap: 5px; overflow-x: auto; }
+        .nav-item { width: auto; flex: 0 0 auto; padding: 9px 10px; font-size: 12px; }
+        .nav-count { margin-left: 0; }
+        .main-shell { min-height: 0; height: auto; flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+        .topbar { position: sticky; top: 0; z-index: 5; min-height: 47px; padding: 0 16px; }
+        .workspace { padding: 22px 16px 24px; }
+        .source-line { align-items: flex-start; flex-direction: column; gap: 8px; }
+        .summary-item { display: block; min-height: 58px; padding: 10px 12px; }
+        .summary-value { display: block; font-size: 17px; }
+        .summary-label { display: block; margin-top: 2px; font-size: 11px; }
+        .route-grid { grid-template-columns: 1fr; }
+        .route-lane { border-top-width: 1px; }
+        .split-view { grid-template-columns: 1fr; }
+        .queue-panel { border-right: 0; border-bottom: 1px solid var(--line); }
+        .queue-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 290px; }
+        .queue-item { border-right: 1px solid #ecece5; }
+        .focus-layout { grid-template-columns: 1fr; }
+        .focus-rail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .focus-rail-head { grid-column: 1 / -1; }
+      }
+      @media (max-width: 540px) {
+        .topbar { padding: 0 12px; }
+        .machine-label { display: none; }
+        .workspace { padding: 18px 12px 24px; }
+        .page-head { align-items: flex-start; flex-direction: column; gap: 13px; }
+        .page-head h1 { font-size: 23px; }
+        .head-actions { width: 100%; }
+        .head-actions .button { flex: 1; }
+        .head-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+        .head-actions [data-action="open-move"] { grid-column: 1 / -1; }
+        .rule-fields { grid-template-columns: 1fr; }
+        .rule-field.wide { grid-column: auto; }
+        .rule-form, .rule-list-section { padding-right: 15px; padding-left: 15px; }
+        .rule-form-footer { align-items: stretch; flex-direction: column; }
+        .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .summary-item:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
+        .summary-item:nth-child(4) { border-top: 1px solid var(--line); }
+        .toolbar { align-items: stretch; flex-direction: column-reverse; gap: 10px; }
+        .search-box { width: 100%; }
+        .filter-tabs { overflow-x: auto; flex-wrap: nowrap; }
+        .attention-strip { grid-template-columns: 1fr; }
+        .file-row { gap: 8px; padding: 10px; }
+        .file-row .file-status { font-size: 11px; }
+        .file-row .file-status .icon { width: 15px; height: 15px; }
+        .split-view { min-height: 0; }
+        .queue-list { display: block; max-height: 285px; }
+        .inspector { padding: 15px; }
+        .focus-sheet { padding: 17px 15px; }
+        .focus-file-head h3 { font-size: 16px; }
+        .focus-details { grid-template-columns: 1fr; gap: 13px; }
+        .focus-rail { grid-template-columns: 1fr; }
+        .focus-rail-head { grid-column: auto; }
+        .action-bar { align-items: stretch; flex-direction: column; gap: 9px; padding: 10px; }
+        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; }
+        .action-buttons .button { min-width: 0; padding: 0 8px; font-size: 11px; }
+        .prototype-switcher { bottom: 9px; min-height: 44px; gap: 6px; }
+        .switcher-current { min-width: 120px; }
+        .switcher-title { font-size: 11px; }
+        .toast { right: 12px; bottom: 130px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="主要導覽">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <span class="brand-name">檔案整理器</span>
+        </div>
+        <div class="nav-label">工作區</div>
+        <nav class="nav-list">
+          <button class="nav-item active" type="button" data-nav="queue" aria-current="page"><span class="icon" style="--icon:url('/icons/inbox')" aria-hidden="true"></span><span>待確認檔案</span><span class="nav-count" id="nav-count">6</span></button>
+          <button class="nav-item" type="button" data-nav="rules"><span class="icon" style="--icon:url('/icons/list-filter')" aria-hidden="true"></span><span>整理規則</span><span class="nav-count" data-rule-count>4</span></button>
+          <button class="nav-item" type="button" data-nav="history"><span class="icon" style="--icon:url('/icons/history')" aria-hidden="true"></span><span>操作紀錄</span></button>
+        </nav>
+        <div class="sidebar-spacer"></div>
+        <div class="schedule-note">
+          <div class="schedule-title"><span class="icon" style="--icon:url('/icons/clock')" aria-hidden="true"></span><span>排程示意</span></div>
+          <p>每日 18:00 掃描<br />登入時補上未完成掃描</p>
+        </div>
+        <button class="nav-item" type="button" data-nav="settings"><span class="icon" style="--icon:url('/icons/settings-2')" aria-hidden="true"></span><span>設定</span></button>
+        <div class="local-note">僅為互動原型<br />不會讀取或移動本機檔案</div>
+      </aside>
+
+      <div class="main-shell">
+        <header class="topbar">
+          <div class="topbar-path"><span>檔案整理器</span><span aria-hidden="true">/</span><strong>待確認檔案</strong></div>
+          <div class="topbar-right"><span class="machine-label">Windows 11 示意介面</span><span class="demo-pill"><span class="demo-dot" aria-hidden="true"></span>合成示範資料</span></div>
+        </header>
+        <main class="workspace" id="workspace" aria-live="polite"></main>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog id="move-dialog" aria-labelledby="dialog-title">
+      <div class="dialog-head">
+        <div><h2 id="dialog-title">確認模擬移動</h2><p>請檢查選取檔案與目的地。這個原型不會操作實際檔案。</p></div>
+        <button class="icon-button" type="button" data-action="close-dialog" aria-label="關閉"><span class="icon" style="--icon:url('/icons/x')" aria-hidden="true"></span></button>
+      </div>
+      <div class="dialog-body" id="dialog-files"></div>
+      <div class="dialog-actions">
+        <button class="button" type="button" data-action="close-dialog">返回檢查</button>
+        <button class="button primary" type="button" data-action="confirm-move"><span class="icon" style="--icon:url('/icons/move-right')" aria-hidden="true"></span>模擬移動</button>
+      </div>
+    </dialog>
+    <dialog id="rule-dialog" aria-labelledby="rule-dialog-title">
+      <div class="dialog-head">
+        <div><h2 id="rule-dialog-title">新增整理規則</h2><p>設定檔名條件與目的地；新增後會先保留在預覽模式。</p></div>
+        <button class="icon-button" type="button" data-action="close-rule-dialog" aria-label="關閉"><span class="icon" style="--icon:url('/icons/x')" aria-hidden="true"></span></button>
+      </div>
+      <form class="rule-form" id="rule-form">
+        <div class="rule-fields">
+          <label class="rule-field wide">規則名稱<input name="name" required maxlength="60" placeholder="例如：採購報價" /></label>
+          <label class="rule-field wide">檔名關鍵字<input name="keywords" required placeholder="例如：quote, supplier" /><small>以逗號分隔；比對不區分大小寫。</small></label>
+          <label class="rule-field">關鍵字條件<select name="matchMode"><option value="any">符合任一關鍵字</option><option value="all">符合所有關鍵字</option></select></label>
+          <label class="rule-field">副檔名（選填）<input name="extension" placeholder="例如：.pdf" /><small>留空時不限制副檔名。</small></label>
+          <label class="rule-field wide">目的地資料夾
+            <span class="folder-picker-row"><input id="destination-display" readonly placeholder="尚未選取資料夾" aria-describedby="destination-help" /><button class="button" type="button" data-action="choose-destination"><span class="icon" style="--icon:url('/icons/folder-open')" aria-hidden="true"></span>選擇資料夾</button></span>
+            <small id="destination-help">瀏覽器只會提供資料夾名稱，不公開完整路徑；原型不會讀取資料夾內容。</small>
+          </label>
+          <input id="destination-fallback" type="file" webkitdirectory directory multiple hidden />
+        </div>
+        <div class="rule-form-footer"><p class="rule-form-note">原型資料只存在目前頁面工作階段，不會讀取或移動真實檔案。</p><button class="button primary" type="submit"><span class="icon" style="--icon:url('/icons/plus')" aria-hidden="true"></span>新增規則</button></div>
+      </form>
+      <section class="rule-list-section" aria-label="目前規則"><div class="rule-list-head"><strong>目前規則</strong><span id="rule-list-count">4 條 · 預覽模式</span></div><div class="rule-list" id="rule-list"></div></section>
+    </dialog>
+
+    <div class="prototype-switcher" aria-label="原型版型切換">
+      <span class="switcher-title">版型原型</span>
+      <button class="switcher-button" type="button" data-variant-step="-1" aria-label="上一種版型"><span class="icon" style="--icon:url('/icons/chevron-left')" aria-hidden="true"></span></button>
+      <div class="switcher-current" aria-live="polite"><strong id="variant-label">A · 目的地分組</strong><span>← → 切換版型</span></div>
+      <button class="switcher-button" type="button" data-variant-step="1" aria-label="下一種版型"><span class="icon" style="--icon:url('/icons/chevron-right')" aria-hidden="true"></span></button>
+    </div>
+
+    <script>
+      const variantOrder = ["route", "inspector", "focus"];
+      const variantLabels = {
+        route: "A · 目的地分組",
+        inspector: "B · 清單檢視器",
+        focus: "C · 逐檔判定",
+      };
+      const files = [
+        { id: "invoice", name: "Q3_vendor_invoice_8391.pdf", ext: "PDF", size: "284 KB", modified: "今天 08:42", rule: "財務 · 廠商發票", destination: "%USERPROFILE%\\Documents\\Finance\\Invoices", route: "財務 / 廠商發票", state: "ready", selected: true },
+        { id: "nda", name: "Intel_NDA_signed.pdf", ext: "PDF", size: "1.8 MB", modified: "今天 08:46", rule: "法務 · 保密協議", destination: "%USERPROFILE%\\Documents\\Legal\\NDAs", route: "法務 / 保密協議", state: "ready", selected: true },
+        { id: "receipt", name: "Q4_travel_receipt_SFO.pdf", ext: "PDF", size: "650 KB", modified: "今天 08:51", rule: "財務 · 差旅收據", destination: "%USERPROFILE%\\Documents\\Finance\\Expenses", route: "財務 / 差旅收據", state: "ready", selected: true },
+        { id: "assets", name: "brand_assets_Q4.zip", ext: "ZIP", size: "12.4 MB", modified: "今天 09:02", rule: "行銷 · 品牌素材", destination: "%USERPROFILE%\\Documents\\Marketing\\Brand assets", route: "行銷 / 品牌素材", state: "ready", selected: false },
+        { id: "quote", name: "supplier_quote_revised_v3.xlsx", ext: "XLSX", size: "96 KB", modified: "今天 09:07", rule: "採購報價、財務供應商", destination: "有兩條規則指向不同目的地", route: "需確認", state: "conflict", selected: false },
+        { id: "checklist", name: "onboarding_checklist_2026.docx", ext: "DOCX", size: "120 KB", modified: "今天 09:12", rule: "尚未符合任何規則", destination: "保留在 Downloads", route: "未符合規則", state: "unmatched", selected: false },
+      ];
+      const rules = [
+        { name: "財務 · 廠商發票", keywords: ["invoice", "vendor"], matchMode: "any", extension: ".pdf", destination: "%USERPROFILE%\\Documents\\Finance\\Invoices" },
+        { name: "法務 · 保密協議", keywords: ["nda", "signed"], matchMode: "all", extension: ".pdf", destination: "%USERPROFILE%\\Documents\\Legal\\NDAs" },
+        { name: "財務 · 差旅收據", keywords: ["travel", "receipt"], matchMode: "all", extension: ".pdf", destination: "%USERPROFILE%\\Documents\\Finance\\Expenses" },
+        { name: "行銷 · 品牌素材", keywords: ["brand", "assets"], matchMode: "all", extension: ".zip", destination: "%USERPROFILE%\\Documents\\Marketing\\Brand assets" },
+      ];
+      const routeGroups = ["財務 / 廠商發票", "法務 / 保密協議", "財務 / 差旅收據", "行銷 / 品牌素材"];
+      const logStorageKey = "file-route-prototype.movement-log.v1";
+
+      function loadMovementLogs() {
+        try {
+          const records = JSON.parse(localStorage.getItem(logStorageKey) || "[]");
+          return Array.isArray(records) ? records : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveMovementLogs() {
+        try {
+          localStorage.setItem(logStorageKey, JSON.stringify(state.logs));
+          return true;
+        } catch {
+          showToast("無法儲存本機操作紀錄；請下載 JSON 備份。");
+          return false;
+        }
+      }
+
+      const state = { variant: new URLSearchParams(location.search).get("variant"), page: "queue", filter: "all", search: "", focusedId: "invoice", toastTimer: null, lastMoved: [], logs: loadMovementLogs(), historyDate: "", historyType: "all", historyName: "" };
+      const workspace = document.getElementById("workspace");
+      const dialog = document.getElementById("move-dialog");
+      const ruleDialog = document.getElementById("rule-dialog");
+      let selectedDestination = null;
+
+      function currentVariant() {
+        return variantOrder.includes(state.variant) ? state.variant : "route";
+      }
+
+      function icon(name, extra = "") {
+        return `<span class="icon ${extra}" style="--icon:url('/icons/${name}')" aria-hidden="true"></span>`;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+      }
+
+      function eligibleFiles() {
+        return files.filter((file) => file.state === "ready");
+      }
+
+      function selectedFiles() {
+        return files.filter((file) => file.selected && file.state === "ready");
+      }
+
+      function statusMarkup(file) {
+        if (file.state === "conflict") return `<span class="file-status review">${icon("circle-alert")}需確認</span>`;
+        if (file.state === "unmatched") return `<span class="file-status">${icon("folder-open")}留在來源</span>`;
+        if (file.state === "moved") return `<span class="file-status moved">${icon("circle-check")}模擬已移動</span>`;
+        return `<span class="file-status">${icon("circle-check")}可預覽</span>`;
+      }
+
+      function fileGlyph(file) {
+        const type = file.ext.toLowerCase();
+        return `<span class="file-glyph ${type}" aria-label="${escapeHtml(file.ext)} 檔案">${escapeHtml(file.ext)}</span>`;
+      }
+
+      function searchable(file) {
+        return `${file.name} ${file.rule} ${file.destination} ${file.route}`.toLowerCase();
+      }
+
+      function filterAllows(file) {
+        if (state.filter === "ready" && file.state !== "ready") return false;
+        if (state.filter === "review" && file.state !== "conflict") return false;
+        if (state.filter === "unmatched" && file.state !== "unmatched") return false;
+        if (state.filter === "moved" && file.state !== "moved") return false;
+        return true;
+      }
+
+      function focusQueue() {
+        const query = state.search.trim().toLowerCase();
+        return files.filter((file) => filterAllows(file) && (!query || searchable(file).includes(query)));
+      }
+
+      function checkboxMarkup(file) {
+        const disabled = file.state !== "ready";
+        return `<input type="checkbox" data-select-file="${file.id}" aria-label="選取 ${escapeHtml(file.name)}" ${file.selected && !disabled ? "checked" : ""} ${disabled ? "disabled" : ""} />`;
+      }
+
+      function fileRow(file, compact = false) {
+        const rowClass = file.state === "conflict" ? "needs-review" : file.state === "unmatched" ? "unmatched" : file.selected ? "selected" : "";
+        const meta = compact ? file.size : `${file.size} · ${file.modified}`;
+        return `<div class="file-entry" data-file-entry="${file.id}" data-search="${escapeHtml(searchable(file))}" data-state="${file.state}" ${filterAllows(file) ? "" : "hidden"}>
+          <div class="file-row ${rowClass}">
+            ${checkboxMarkup(file)}
+            ${fileGlyph(file)}
+            <div class="file-main"><span class="file-name">${escapeHtml(file.name)}</span><span class="file-subline"><span>${escapeHtml(meta)}</span><span>${escapeHtml(file.rule)}</span></span></div>
+            ${statusMarkup(file)}
+          </div>
+        </div>`;
+      }
+
+      function summaryMarkup() {
+        const ready = eligibleFiles().length;
+        const conflicts = files.filter((file) => file.state === "conflict").length;
+        const unmatched = files.filter((file) => file.state === "unmatched").length;
+        const moved = files.filter((file) => file.state === "moved").length;
+        const total = files.length;
+        document.getElementById("nav-count").textContent = String(total - moved);
+        return `<div class="summary-strip" aria-label="掃描摘要">
+          <div class="summary-item"><strong class="summary-value">${total - moved}</strong><span class="summary-label">個新檔待處理</span></div>
+          <div class="summary-item"><strong class="summary-value">${ready}</strong><span class="summary-label">符合規則</span></div>
+          <div class="summary-item attention"><strong class="summary-value">${conflicts}</strong><span class="summary-label">規則衝突</span></div>
+          <div class="summary-item problem"><strong class="summary-value">${unmatched}</strong><span class="summary-label">未符合規則</span></div>
+        </div>`;
+      }
+
+      function sharedHeader() {
+        return `<div class="page-head">
+          <div><h1>待確認檔案</h1><p>先檢查規則與目的地，再決定要模擬移動哪些檔案。</p></div>
+          <div class="head-actions"><button class="button" type="button" data-action="scan">${icon("scan-search")}立即掃描</button><button class="button" type="button" data-action="open-rules">${icon("plus")}新增規則</button><button class="button primary" type="button" data-action="open-move" ${selectedFiles().length ? "" : "disabled"}>${icon("move-right")}預覽移動 ${selectedFiles().length} 個</button></div>
+        </div>
+        <div class="source-line">
+          <div class="source-path">${icon("folder-open")}<strong>示範來源 · Downloads</strong><code>%USERPROFILE%\\Downloads</code></div>
+          <div class="scan-meta">${icon("clock")}上次掃描 09:14 <span aria-hidden="true">·</span> 排程示意 18:00</div>
+        </div>
+        ${summaryMarkup()}
+        <div class="toolbar">
+          <div class="filter-tabs" role="group" aria-label="檔案篩選">
+            ${filterButton("all", "全部", files.length)}
+            ${filterButton("ready", "符合規則", eligibleFiles().length)}
+            ${filterButton("review", "需確認", files.filter((file) => file.state === "conflict").length)}
+            ${filterButton("unmatched", "未符合", files.filter((file) => file.state === "unmatched").length)}
+            ${files.some((file) => file.state === "moved") ? filterButton("moved", "已模擬移動", files.filter((file) => file.state === "moved").length) : ""}
+          </div>
+          <label class="search-box">${icon("search")}<input type="search" value="${escapeHtml(state.search)}" placeholder="搜尋檔名或規則" aria-label="搜尋檔名或規則" /><span class="visible-count" id="visible-count"></span></label>
+        </div>`;
+      }
+
+      function filterButton(key, label, count) {
+        return `<button type="button" class="filter-tab" data-filter="${key}" aria-pressed="${state.filter === key}"><span>${label}</span><span class="filter-count">${count}</span></button>`;
+      }
+
+      function routeLane(name) {
+        const members = files.filter((file) => file.route === name);
+        if (!members.length) return "";
+        const destination = members[0].destination;
+        return `<section class="route-lane" aria-label="目的地 ${escapeHtml(name)}">
+          <header class="route-lane-head"><div><h3>${escapeHtml(name)}</h3><p>${escapeHtml(destination)}</p></div><span class="lane-count">${members.length}</span></header>
+          ${members.map((file) => fileRow(file, true)).join("")}
+        </section>`;
+      }
+
+      function attentionBlock(stateName, title, tone, iconName, explanation) {
+        const members = files.filter((file) => file.state === stateName);
+        if (!members.length) return "";
+        const rows = members.map((file) => `<div class="file-entry" data-file-entry="${file.id}" data-search="${escapeHtml(searchable(file))}" data-state="${file.state}" ${filterAllows(file) ? "" : "hidden"}>
+          <div class="file-row ${stateName === "conflict" ? "needs-review" : "unmatched"}">${checkboxMarkup(file)}${fileGlyph(file)}<div class="file-main"><span class="file-name">${escapeHtml(file.name)}</span><span class="file-subline"><span>${escapeHtml(file.size)}</span><span>${escapeHtml(file.rule)}</span></span></div>${statusMarkup(file)}</div>
+        </div>`).join("");
+        return `<section class="attention-block"><header class="attention-head ${tone}"><h3>${icon(iconName)}${title}</h3><span class="filter-count">${members.length}</span></header>${rows}<div class="lane-footer"><span>${explanation}</span><button class="text-button" type="button" data-action="${stateName === "conflict" ? "conflict" : "unmatched"}">檢視原因 ${icon("arrow-right")}</button></div></section>`;
+      }
+
+      function routeView() {
+        return `<section class="view-enter" aria-label="依目的地分組檢視">
+          <div class="variant-heading"><h2>依目的地整理</h2><p>先看檔案將送往哪裡；有疑問的項目列在下方。</p></div>
+          <div class="route-grid">${routeGroups.map(routeLane).join("")}</div>
+          <div class="attention-strip">
+            ${attentionBlock("conflict", "規則衝突", "warning", "circle-alert", "兩條規則命中不同目的地，暫不移動。")}
+            ${attentionBlock("unmatched", "未符合規則", "error", "folder-open", "未符合項目會留在來源資料夾。")}
+          </div>
+        </section>`;
+      }
+
+      function queueItem(file) {
+        const current = state.focusedId === file.id;
+        const rowClass = file.state === "conflict" ? "needs-review" : file.state === "unmatched" ? "unmatched" : file.selected ? "selected" : "";
+        return `<div class="file-entry" data-file-entry="${file.id}" data-search="${escapeHtml(searchable(file))}" data-state="${file.state}" ${filterAllows(file) ? "" : "hidden"}>
+          <div class="queue-item ${current ? "current" : ""} ${rowClass}">
+            ${checkboxMarkup(file)}
+            <button type="button" class="file-main" data-open-file="${file.id}" aria-label="檢視 ${escapeHtml(file.name)}"><span class="file-name">${escapeHtml(file.name)}</span><span class="file-subline"><span>${escapeHtml(file.size)}</span><span>${escapeHtml(file.rule)}</span></span></button>
+            ${statusMarkup(file)}
+          </div>
+        </div>`;
+      }
+
+      function inspectorDetails(file) {
+        if (!file) return `<div class="empty-detail">${icon("file-text")}<strong>選取檔案以檢視路由細節</strong></div>`;
+        const conflict = file.state === "conflict";
+        const unmatched = file.state === "unmatched";
+        const boxClass = conflict ? "problem" : unmatched ? "warning" : "";
+        const heading = conflict ? "需要人工處理" : unmatched ? "不會移動" : file.state === "moved" ? "模擬移動完成" : "符合整理規則";
+        const body = conflict ? "「採購報價」與「財務供應商」同時符合，但目的地不同。" : unmatched ? "目前沒有規則符合此檔案；它會保留在 Downloads。" : file.state === "moved" ? "這只是原型中的模擬結果，實際檔案未變動。" : `檔名符合「${file.rule}」，建議送往下列目的地。`;
+        return `<div class="inspector-title">${fileGlyph(file)}<div><h3>${escapeHtml(file.name)}</h3><p>${escapeHtml(file.ext)} · ${escapeHtml(file.size)} · ${escapeHtml(file.modified)}</p></div></div>
+          <div class="detail-section"><div class="detail-label">判斷結果</div><div class="match-box ${boxClass}">${icon(conflict ? "circle-alert" : unmatched ? "folder-open" : "circle-check")}<div><strong>${heading}</strong><div class="detail-value">${body}</div></div></div></div>
+          <div class="detail-section"><div class="detail-label">符合的規則</div><div class="detail-value">${escapeHtml(file.rule)}</div></div>
+          <div class="detail-section"><div class="detail-label">目的地${unmatched ? " · 預設保留" : ""}</div><div class="detail-value"><code>${escapeHtml(file.destination)}</code></div></div>
+          <label class="detail-check"><input type="checkbox" data-select-file="${file.id}" ${file.selected && file.state === "ready" ? "checked" : ""} ${file.state !== "ready" ? "disabled" : ""} />加入本次模擬移動</label>`;
+      }
+
+      function inspectorView() {
+        const file = files.find((item) => item.id === state.focusedId);
+        return `<section class="view-enter" aria-label="清單與檔案檢視器">
+          <div class="variant-heading"><h2>清單 + 檔案檢視器</h2><p>保留整批檔案清單，同時核對單一檔案的規則與目的地。</p></div>
+          <div class="split-view">
+            <section class="queue-panel" aria-label="檔案清單"><div class="panel-head"><strong>來源檔案</strong><span>${files.length} 個示範項目</span></div><div class="queue-list">${files.map(queueItem).join("")}</div></section>
+            <section class="inspector" aria-label="選取檔案詳細資訊">${inspectorDetails(file)}</section>
+          </div>
+        </section>`;
+      }
+
+      function focusView() {
+        const queue = focusQueue();
+        if (!queue.length) {
+          return `<section class="view-enter" aria-label="逐檔判定"><div class="variant-heading"><h2>逐檔判定</h2><p>每次聚焦一個檔案，確認後再進到下一個。</p></div><div class="empty-detail">${icon("search")}<strong>沒有符合條件的檔案</strong><button class="text-button" type="button" data-action="clear-filters">清除搜尋與篩選 ${icon("arrow-right")}</button></div></section>`;
+        }
+        let focusIndex = queue.findIndex((file) => file.id === state.focusedId);
+        if (focusIndex < 0) {
+          state.focusedId = queue[0].id;
+          focusIndex = 0;
+        }
+        const file = queue[focusIndex];
+        const isReady = file.state === "ready";
+        const isConflict = file.state === "conflict";
+        const progress = Math.round(((focusIndex + 1) / queue.length) * 100);
+        const route = isReady ? `<div class="focus-route">${icon("folder-open")}<code>${escapeHtml(file.destination)}</code></div>` : `<div class="detail-value">${isConflict ? "兩個規則指向不同資料夾，需先調整規則。" : "此檔案會留在來源資料夾。"}</div>`;
+        const actionLabel = file.selected ? "已加入移動清單" : "加入移動清單";
+        const actionDisabled = !isReady;
+        return `<section class="view-enter" aria-label="逐檔判定">
+          <div class="variant-heading"><h2>逐檔判定</h2><p>每次聚焦一個檔案，確認後再進到下一個。</p></div>
+          <div class="focus-layout">
+            <div class="focus-main">
+              <div class="focus-progress"><span>第 ${focusIndex + 1} 個，共 ${queue.length} 個</span><span>${file.selected ? "已加入本次清單" : file.state === "ready" ? "尚未選取" : file.state === "conflict" ? "等待處理" : file.state === "moved" ? "已模擬移動" : "保留在來源"}</span></div>
+              <div class="progress-track" role="progressbar" aria-label="檢視進度" aria-valuemin="0" aria-valuemax="${queue.length}" aria-valuenow="${focusIndex + 1}"><div class="progress-fill" style="width:${progress}%"></div></div>
+              <article class="focus-sheet">
+                <div class="focus-file-head">${fileGlyph(file)}<div><h3>${escapeHtml(file.name)}</h3><p>${escapeHtml(file.ext)} · ${escapeHtml(file.size)} · ${escapeHtml(file.modified)}</p></div>${statusMarkup(file)}</div>
+                <div class="focus-details">
+                  <div class="detail-section"><div class="detail-label">符合的規則</div><div class="detail-value">${escapeHtml(file.rule)}</div></div>
+                  <div class="detail-section"><div class="detail-label">處理方式</div><div class="detail-value">${isReady ? "符合條件，可加入本次移動" : isConflict ? "目的地衝突，需人工處理" : "無符合規則，保留在來源"}</div></div>
+                  <div class="detail-section" style="grid-column:1/-1"><div class="detail-label">${isReady ? "建議目的地" : "結果"}</div>${route}</div>
+                </div>
+                <div class="focus-actions">
+                  <button class="button ${file.selected ? "" : "primary"}" type="button" data-action="focus-select" ${actionDisabled ? "disabled" : ""}>${icon(file.selected ? "check" : "circle-check")}${actionLabel}</button>
+                  ${isConflict ? `<button class="button" type="button" data-action="conflict">${icon("circle-alert")}檢視衝突</button>` : ""}
+                  <button class="button" type="button" data-action="focus-next">${focusIndex === queue.length - 1 ? "回到第一個" : "下一個檔案"}${icon("arrow-right")}</button>
+                </div>
+              </article>
+            </div>
+            <aside class="focus-rail" aria-label="本次檔案順序"><div class="focus-rail-head"><strong>掃描佇列</strong><span>${queue.length} 個項目</span></div>${queue.map((item) => `<div class="file-entry" data-file-entry="${item.id}" data-search="${escapeHtml(searchable(item))}" data-state="${item.state}"><button class="focus-rail-item ${item.id === file.id ? "current" : ""}" type="button" data-focus-id="${item.id}" aria-current="${item.id === file.id ? "step" : "false"}">${fileGlyph(item)}<span class="file-main"><span class="file-name">${escapeHtml(item.name)}</span><span class="file-subline">${item.selected ? "已選取" : item.state === "ready" ? "符合規則" : item.state === "conflict" ? "需確認" : item.state === "moved" ? "已模擬移動" : "留在來源"}</span></span></button></div>`).join("")}</aside>
+          </div>
+        </section>`;
+      }
+
+      function actionBar() {
+        const selected = selectedFiles();
+        return `<div class="action-bar" aria-label="選取檔案操作">
+          <div class="selection-summary"><span class="selection-number" id="selected-count">${selected.length}</span><div class="selection-copy"><strong>個檔案已選取</strong><span>僅會模擬移動符合規則的檔案</span></div></div>
+          <div class="action-buttons"><button class="button" type="button" data-action="select-all">${icon("check")}選取全部符合項目</button><button class="button primary" type="button" data-action="open-move" ${selected.length ? "" : "disabled"}>${icon("move-right")}模擬移動 ${selected.length} 個</button></div>
+        </div>`;
+      }
+
+      function render() {
+        updateNavigation();
+        if (state.page === "history") {
+          workspace.innerHTML = historyView();
+          document.querySelector(".topbar-path strong").textContent = "操作紀錄";
+          document.querySelector(".prototype-switcher").hidden = true;
+          refreshHistoryResults();
+          return;
+        }
+        document.querySelector(".topbar-path strong").textContent = "待確認檔案";
+        document.querySelector(".prototype-switcher").hidden = false;
+        const variant = currentVariant();
+        const view = variant === "inspector" ? inspectorView() : variant === "focus" ? focusView() : routeView();
+        workspace.innerHTML = `${sharedHeader()}${view}${actionBar()}`;
+        document.getElementById("variant-label").textContent = variantLabels[variant];
+        applySearch();
+      }
+
+      function renderRuleList() {
+        const list = document.getElementById("rule-list");
+        const countLabel = document.getElementById("rule-list-count");
+        if (!list || !countLabel) return;
+        list.innerHTML = rules.map((rule) => `<div class="rule-row"><div><strong>${escapeHtml(rule.name)}</strong><p>${escapeHtml(rule.keywords.join("、"))} · ${rule.matchMode === "all" ? "全部符合" : "任一符合"}${rule.extension ? ` · ${escapeHtml(rule.extension)}` : " · 不限副檔名"}<br />${escapeHtml(rule.destination)}</p></div><span class="file-status">預覽模式</span></div>`).join("");
+        countLabel.textContent = `${rules.length} 條 · 預覽模式`;
+        document.querySelectorAll("[data-rule-count]").forEach((counter) => { counter.textContent = String(rules.length); });
+      }
+
+      function updateNavigation() {
+        document.querySelectorAll(".nav-item[data-nav]").forEach((item) => {
+          const active = item.dataset.nav === state.page;
+          item.classList.toggle("active", active);
+          if (active) item.setAttribute("aria-current", "page");
+          else item.removeAttribute("aria-current");
+        });
+      }
+
+      function localDateKey(value) {
+        const date = new Date(value);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      }
+
+      function filteredHistory() {
+        const name = state.historyName.trim().toLocaleLowerCase();
+        return state.logs.filter((record) => {
+          const matchesDate = !state.historyDate || localDateKey(record.movedAt) === state.historyDate;
+          const matchesType = state.historyType === "all" || record.fileType === state.historyType;
+          const matchesName = !name || record.fileName.toLocaleLowerCase().includes(name);
+          return matchesDate && matchesType && matchesName;
+        }).sort((a, b) => b.movedAt.localeCompare(a.movedAt));
+      }
+
+      function historyRecordMarkup(record) {
+        const movedAt = new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(record.movedAt));
+        const label = record.result === "simulated-undo" ? "模擬復原" : "模擬移動";
+        return `<article class="history-record"><div class="history-file"><strong title="${escapeHtml(record.fileName)}">${escapeHtml(record.fileName)}</strong><span>${movedAt} · ${escapeHtml(record.fileType.toUpperCase())} · ${escapeHtml(record.ruleName)}</span></div><div class="history-route"><span>${escapeHtml(record.sourceFolder)}</span>${icon("arrow-right")}<span>${escapeHtml(record.destinationFolder)}</span></div><span class="file-status moved history-status">${icon("circle-check")}${label}</span></article>`;
+      }
+
+      function refreshHistoryResults() {
+        const results = document.getElementById("history-results");
+        const count = document.getElementById("history-result-count");
+        if (!results || !count) return;
+        const filtered = filteredHistory();
+        count.textContent = `顯示 ${filtered.length} / ${state.logs.length} 筆記錄`;
+        results.innerHTML = filtered.length ? filtered.map(historyRecordMarkup).join("") : `<div class="history-empty">${icon("history")}<strong>${state.logs.length ? "找不到符合條件的紀錄" : "尚無移動紀錄"}</strong><p>${state.logs.length ? "調整日期、檔案類型或檔名條件再試一次。" : "確認模擬移動後，記錄會保存在此瀏覽器；你可以下載 JSON 作為檔案備份。"}</p></div>`;
+      }
+
+      function historyView() {
+        const types = [...new Set(state.logs.map((record) => record.fileType))].sort();
+        return `<div class="page-head"><div><h1>操作紀錄</h1><p>追蹤每個檔案的來源、目的地與移動時間。</p></div><div class="head-actions"><button class="button primary" type="button" data-action="export-logs" ${state.logs.length ? "" : "disabled"}>${icon("download")}下載 JSON</button></div></div>
+          <div class="history-filters" aria-label="篩選操作紀錄"><label class="history-filter">日期<input id="history-date" type="date" value="${escapeHtml(state.historyDate)}" /></label><label class="history-filter">檔案類型<select id="history-type"><option value="all">所有類型</option>${types.map((type) => `<option value="${escapeHtml(type)}" ${state.historyType === type ? "selected" : ""}>${escapeHtml(type.toUpperCase())}</option>`).join("")}</select></label><label class="history-filter filename">檔名<input id="history-name" type="search" value="${escapeHtml(state.historyName)}" placeholder="搜尋檔名" /></label><button class="button" type="button" data-action="clear-history-filters">清除條件</button></div>
+          <p class="history-count" id="history-result-count"></p><section class="history-list" id="history-results" aria-live="polite"></section>`;
+      }
+
+      function downloadHistoryJson() {
+        const payload = JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), records: state.logs }, null, 2);
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `file-movement-log-${localDateKey(new Date())}.json`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast("JSON 操作紀錄已下載。");
+      }
+
+      function openRuleDialog() {
+        renderRuleList();
+        ruleDialog.showModal();
+      }
+
+      async function chooseDestinationFolder() {
+        if (typeof window.showDirectoryPicker === "function") {
+          try {
+            const handle = await window.showDirectoryPicker({ mode: "read" });
+            selectedDestination = { name: handle.name, handle };
+            document.getElementById("destination-display").value = handle.name;
+          } catch (error) {
+            if (error.name !== "AbortError") showToast("無法選取資料夾，請再試一次。");
+          }
+          return;
+        }
+        document.getElementById("destination-fallback").click();
+      }
+
+      function applySearch() {
+        const query = state.search.trim().toLowerCase();
+        let visible = 0;
+        document.querySelectorAll("[data-file-entry]").forEach((entry) => {
+          const matchesQuery = !query || entry.dataset.search.includes(query);
+          const matchesFilter = filterAllows(files.find((file) => file.id === entry.dataset.fileEntry));
+          entry.hidden = !matchesQuery || !matchesFilter;
+          if (!entry.hidden) visible += 1;
+        });
+        document.querySelectorAll(".route-lane").forEach((lane) => {
+          lane.hidden = !lane.querySelector("[data-file-entry]:not([hidden])");
+        });
+        document.querySelectorAll(".attention-block").forEach((block) => {
+          block.hidden = !block.querySelector("[data-file-entry]:not([hidden])");
+        });
+        const count = document.getElementById("visible-count");
+        if (count) count.textContent = `${visible} 項`;
+      }
+
+      function syncSelection() {
+        document.querySelectorAll("[data-select-file]").forEach((input) => {
+          const file = files.find((item) => item.id === input.dataset.selectFile);
+          if (file) input.checked = file.selected && file.state === "ready";
+        });
+        document.querySelectorAll("[data-file-entry]").forEach((entry) => {
+          const file = files.find((item) => item.id === entry.dataset.fileEntry);
+          const row = entry.querySelector(".file-row, .queue-item");
+          if (row && file?.selected) row.classList.add("selected");
+          else row?.classList.remove("selected");
+        });
+        const count = selectedFiles().length;
+        const countNode = document.getElementById("selected-count");
+        if (countNode) countNode.textContent = String(count);
+        document.querySelectorAll('[data-action="open-move"]').forEach((action) => {
+          action.disabled = count === 0;
+          action.innerHTML = `${icon("move-right")}預覽移動 ${count} 個`;
+        });
+        document.querySelectorAll('[data-action="select-all"]').forEach((button) => {
+          button.disabled = eligibleFiles().length === 0;
+        });
+      }
+
+      function setVariant(next) {
+        const currentIndex = variantOrder.indexOf(currentVariant());
+        const target = typeof next === "number" ? variantOrder[(currentIndex + next + variantOrder.length) % variantOrder.length] : next;
+        if (!variantOrder.includes(target)) return;
+        state.variant = target;
+        const url = new URL(location.href);
+        url.searchParams.set("variant", target);
+        history.replaceState(null, "", url);
+        render();
+      }
+
+      function showToast(message, undo = false) {
+        const toast = document.getElementById("toast");
+        toast.innerHTML = `<span>${icon("circle-check")}</span><span>${escapeHtml(message)}</span>${undo ? `<button class="text-button" type="button" data-action="undo">${icon("undo-2")}復原示範</button>` : ""}`;
+        toast.classList.add("visible");
+        clearTimeout(state.toastTimer);
+        state.toastTimer = setTimeout(() => toast.classList.remove("visible"), 5200);
+      }
+
+      function openMoveDialog() {
+        const selected = selectedFiles();
+        if (!selected.length) return;
+        document.getElementById("dialog-files").innerHTML = `${selected.map((file) => `<div class="dialog-file"><div><strong>${escapeHtml(file.name)}</strong><span>${escapeHtml(file.rule)}</span></div><span>${escapeHtml(file.destination)}</span></div>`).join("")}<div class="dialog-note">${icon("triangle-alert")}<span>示範模式：按下確認只會更新畫面狀態，不會存取或移動任何本機檔案。</span></div>`;
+        dialog.showModal();
+      }
+
+      function simulateMove() {
+        state.lastMoved = selectedFiles().map((file) => file.id);
+        const movedAt = new Date().toISOString();
+        state.lastMoved.forEach((id) => {
+          const file = files.find((item) => item.id === id);
+          if (file) {
+            state.logs.unshift({
+              id: `${movedAt}-${file.id}`,
+              movedAt,
+              fileName: file.name,
+              fileType: `.${file.name.split(".").pop().toLowerCase()}`,
+              ruleName: file.rule,
+              sourceFolder: "%USERPROFILE%\\Downloads",
+              destinationFolder: file.destination,
+              result: "simulated-move",
+            });
+            file.state = "moved";
+            file.selected = false;
+          }
+        });
+        saveMovementLogs();
+        dialog.close();
+        render();
+        showToast(`已模擬移動 ${state.lastMoved.length} 個檔案；實際檔案未變動。`, true);
+      }
+
+      function showConflict() {
+        const file = files.find((item) => item.id === "quote");
+        document.getElementById("dialog-title").textContent = "這個檔案符合兩條規則";
+        document.querySelector("#move-dialog .dialog-head p").textContent = "目的地不一致，所以自動移動會暫停。請先修改規則。";
+        document.getElementById("dialog-files").innerHTML = `<div class="dialog-file"><div><strong>${escapeHtml(file.name)}</strong><span>規則一：採購報價</span></div><span>%USERPROFILE%\\Documents\\Procurement\\Quotes</span></div><div class="dialog-file"><div><strong>${escapeHtml(file.name)}</strong><span>規則二：財務供應商</span></div><span>%USERPROFILE%\\Documents\\Finance\\Vendors</span></div><div class="dialog-note">${icon("circle-alert")}<span>這只是衝突示意；本原型不會修改規則或檔案。</span></div>`;
+        document.querySelector('[data-action="confirm-move"]').hidden = true;
+        dialog.showModal();
+      }
+
+      function resetDialog() {
+        document.getElementById("dialog-title").textContent = "確認模擬移動";
+        document.querySelector("#move-dialog .dialog-head p").textContent = "請檢查選取檔案與目的地。這個原型不會操作實際檔案。";
+        document.querySelector('[data-action="confirm-move"]').hidden = false;
+      }
+
+      document.addEventListener("click", (event) => {
+        const variantButton = event.target.closest("[data-variant-step]");
+        if (variantButton) { setVariant(Number(variantButton.dataset.variantStep)); return; }
+        const filterButtonNode = event.target.closest("[data-filter]");
+        if (filterButtonNode) { state.filter = filterButtonNode.dataset.filter; render(); return; }
+        const nav = event.target.closest("[data-nav]");
+        if (nav?.dataset.nav === "rules") { openRuleDialog(); return; }
+        if (nav?.dataset.nav === "history") { state.page = "history"; render(); return; }
+        if (nav?.dataset.nav === "queue") { state.page = "queue"; render(); return; }
+        if (nav) { showToast("此原型目前聚焦在待確認與操作紀錄。規則設定尚未實作。"); return; }
+        const openFile = event.target.closest("[data-open-file]");
+        if (openFile) { state.focusedId = openFile.dataset.openFile; render(); return; }
+        const focusId = event.target.closest("[data-focus-id]");
+        if (focusId) { state.focusedId = focusId.dataset.focusId; render(); return; }
+        const action = event.target.closest("[data-action]")?.dataset.action;
+        if (!action) return;
+        if (action === "clear-filters") { state.filter = "all"; state.search = ""; render(); return; }
+        if (action === "scan") showToast("示範掃描完成；沒有讀取任何本機檔案。排程未實際執行。");
+        if (action === "export-logs") { downloadHistoryJson(); return; }
+        if (action === "clear-history-filters") { state.historyDate = ""; state.historyType = "all"; state.historyName = ""; render(); return; }
+          if (action === "open-rules") openRuleDialog();
+          if (action === "choose-destination") { void chooseDestinationFolder(); return; }
+          if (action === "close-rule-dialog") ruleDialog.close();
+        if (action === "select-all") {
+          const allSelected = eligibleFiles().every((file) => file.selected);
+          eligibleFiles().forEach((file) => { file.selected = !allSelected; });
+          syncSelection();
+        }
+        if (action === "open-move") openMoveDialog();
+        if (action === "confirm-move") simulateMove();
+        if (action === "close-dialog") { dialog.close(); resetDialog(); }
+        if (action === "conflict") showConflict();
+        if (action === "unmatched") showToast("未符合規則的檔案會留在來源資料夾，不會自動移動。");
+        if (action === "focus-select") {
+          const file = files.find((item) => item.id === state.focusedId);
+          if (file?.state === "ready") { file.selected = !file.selected; render(); }
+        }
+        if (action === "focus-next") {
+          const queue = focusQueue();
+          const index = queue.findIndex((file) => file.id === state.focusedId);
+          if (queue.length) state.focusedId = queue[(index + 1) % queue.length].id;
+          render();
+        }
+        if (action === "undo") {
+          const restoredAt = new Date().toISOString();
+          state.lastMoved.forEach((id) => {
+            const file = files.find((item) => item.id === id);
+            if (file) {
+              state.logs.unshift({
+                id: `${restoredAt}-${file.id}-undo`,
+                movedAt: restoredAt,
+                fileName: file.name,
+                fileType: `.${file.name.split(".").pop().toLowerCase()}`,
+                ruleName: file.rule,
+                sourceFolder: file.destination,
+                destinationFolder: "%USERPROFILE%\\Downloads",
+                result: "simulated-undo",
+              });
+              file.state = "ready";
+            }
+          });
+          saveMovementLogs();
+          state.lastMoved = [];
+          document.getElementById("toast").classList.remove("visible");
+          render();
+          showToast("已復原示範狀態；實際檔案從未移動。");
+        }
+      });
+
+      document.addEventListener("submit", (event) => {
+        if (event.target.id !== "rule-form") return;
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const keywords = String(formData.get("keywords")).split(",").map((keyword) => keyword.trim()).filter(Boolean);
+        const extensionInput = String(formData.get("extension")).trim().toLowerCase();
+        if (!selectedDestination) {
+          showToast("請先選擇目的地資料夾。");
+          document.querySelector('[data-action="choose-destination"]').focus();
+          return;
+        }
+        rules.unshift({
+          name: String(formData.get("name")).trim(),
+          keywords,
+          matchMode: String(formData.get("matchMode")),
+          extension: extensionInput ? (extensionInput.startsWith(".") ? extensionInput : `.${extensionInput}`) : "",
+          destination: selectedDestination.name,
+          destinationHandle: selectedDestination.handle,
+        });
+        selectedDestination = null;
+        event.target.reset();
+        renderRuleList();
+        showToast("規則已加入預覽清單；原型不會移動真實檔案。");
+      });
+
+      document.addEventListener("change", (event) => {
+        if (event.target.id === "history-date") { state.historyDate = event.target.value; refreshHistoryResults(); return; }
+        if (event.target.id === "history-type") { state.historyType = event.target.value; refreshHistoryResults(); return; }
+        if (event.target.id === "destination-fallback") {
+          const file = event.target.files?.[0];
+          if (file) {
+            const name = file.webkitRelativePath.split("/")[0] || file.name;
+            selectedDestination = { name, handle: null };
+            document.getElementById("destination-display").value = name;
+          }
+          return;
+        }
+        const input = event.target.closest("[data-select-file]");
+        if (!input) return;
+        const file = files.find((item) => item.id === input.dataset.selectFile);
+        if (file?.state === "ready") { file.selected = input.checked; syncSelection(); }
+      });
+
+      document.addEventListener("input", (event) => {
+        if (event.target.id === "history-name") { state.historyName = event.target.value; refreshHistoryResults(); return; }
+        if (!event.target.matches('.search-box input')) return;
+        const cursor = event.target.selectionStart;
+        state.search = event.target.value;
+        if (currentVariant() === "focus" && !focusQueue().some((file) => file.id === state.focusedId)) {
+          if (focusQueue()[0]) state.focusedId = focusQueue()[0].id;
+          render();
+          const search = workspace.querySelector('.search-box input');
+          search?.focus();
+          search?.setSelectionRange(cursor, cursor);
+        } else {
+          applySearch();
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        const focused = document.activeElement;
+        const typing = focused && (focused.matches("input, textarea, select") || focused.isContentEditable);
+        if (typing) return;
+        if (event.key === "ArrowLeft") { event.preventDefault(); setVariant(-1); }
+        if (event.key === "ArrowRight") { event.preventDefault(); setVariant(1); }
+      });
+
+      dialog.addEventListener("close", resetDialog);
+      renderRuleList();
+      render();
+    </script>
+  </body>
+</html>

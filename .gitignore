@@ -1,0 +1,7 @@
+node_modules/
+.impeccable/review/
+.claude/
+skills-lock.json
+.agents/skills/*
+!.agents/skills/grill-me/
+!.agents/skills/grill-me/**

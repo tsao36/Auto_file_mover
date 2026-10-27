@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-27",
+  "title": "Design System: File Routing Workbench",
+  "extensions": {
+    "colorMeta": {
+      "bark": { "role": "primary", "displayName": "樹皮棕", "canonical": "#825B3D", "tonalRamp": ["oklch(15% 0.067 58.1)", "oklch(25% 0.067 58.1)", "oklch(35% 0.067 58.1)", "oklch(45% 0.067 58.1)", "oklch(55% 0.067 58.1)", "oklch(65% 0.067 58.1)", "oklch(75% 0.067 58.1)", "oklch(95% 0.067 58.1)"] },
+      "mint": { "role": "secondary", "displayName": "薄荷綠", "canonical": "#99DCC5", "tonalRamp": ["oklch(15% 0.075 171)", "oklch(25% 0.075 171)", "oklch(35% 0.075 171)", "oklch(45% 0.075 171)", "oklch(55% 0.075 171)", "oklch(65% 0.075 171)", "oklch(75% 0.075 171)", "oklch(95% 0.075 171)"] },
+      "mist": { "role": "neutral", "displayName": "霧綠", "canonical": "#E0E6CD", "tonalRamp": ["oklch(15% 0.034 118)", "oklch(25% 0.034 118)", "oklch(35% 0.034 118)", "oklch(45% 0.034 118)", "oklch(55% 0.034 118)", "oklch(65% 0.034 118)", "oklch(75% 0.034 118)", "oklch(95% 0.034 118)"] },
+      "gold": { "role": "tertiary", "displayName": "豐收金", "canonical": "#B79937", "tonalRamp": ["oklch(15% 0.12 91.7)", "oklch(25% 0.12 91.7)", "oklch(35% 0.12 91.7)", "oklch(45% 0.12 91.7)", "oklch(55% 0.12 91.7)", "oklch(65% 0.12 91.7)", "oklch(75% 0.12 91.7)", "oklch(95% 0.12 91.7)"] },
+      "brick": { "role": "error", "displayName": "磚紅", "canonical": "#B33D2D", "tonalRamp": ["oklch(15% 0.156 30.6)", "oklch(25% 0.156 30.6)", "oklch(35% 0.156 30.6)", "oklch(45% 0.156 30.6)", "oklch(55% 0.156 30.6)", "oklch(65% 0.156 30.6)", "oklch(75% 0.156 30.6)", "oklch(95% 0.156 30.6)"] },
+      "ink": { "role": "neutral", "displayName": "暖墨", "canonical": "#322C25", "tonalRamp": ["oklch(15% 0.015 71.5)", "oklch(25% 0.015 71.5)", "oklch(35% 0.015 71.5)", "oklch(45% 0.015 71.5)", "oklch(55% 0.015 71.5)", "oklch(65% 0.015 71.5)", "oklch(75% 0.015 71.5)", "oklch(95% 0.015 71.5)"] },
+      "muted": { "role": "neutral", "displayName": "次要文字", "canonical": "#62594F", "tonalRamp": ["oklch(15% 0.02 70.3)", "oklch(25% 0.02 70.3)", "oklch(35% 0.02 70.3)", "oklch(45% 0.02 70.3)", "oklch(55% 0.02 70.3)", "oklch(65% 0.02 70.3)", "oklch(75% 0.02 70.3)", "oklch(95% 0.02 70.3)"] },
+      "paper": { "role": "neutral", "displayName": "柔白", "canonical": "#FFFEFA", "tonalRamp": ["oklch(15% 0.005 95.1)", "oklch(25% 0.005 95.1)", "oklch(35% 0.005 95.1)", "oklch(45% 0.005 95.1)", "oklch(55% 0.005 95.1)", "oklch(65% 0.005 95.1)", "oklch(75% 0.005 95.1)", "oklch(95% 0.005 95.1)"] },
+      "line": { "role": "neutral", "displayName": "分隔線", "canonical": "#DEDFD3", "tonalRamp": ["oklch(15% 0.016 110.6)", "oklch(25% 0.016 110.6)", "oklch(35% 0.016 110.6)", "oklch(45% 0.016 110.6)", "oklch(55% 0.016 110.6)", "oklch(65% 0.016 110.6)", "oklch(75% 0.016 110.6)", "oklch(95% 0.016 110.6)"] },
+      "surface": { "role": "neutral", "displayName": "內容底色", "canonical": "#F5F6EF", "tonalRamp": ["oklch(15% 0.009 113.2)", "oklch(25% 0.009 113.2)", "oklch(35% 0.009 113.2)", "oklch(45% 0.009 113.2)", "oklch(55% 0.009 113.2)", "oklch(65% 0.009 113.2)", "oklch(75% 0.009 113.2)", "oklch(95% 0.009 113.2)"] },
+      "gold-ink": { "role": "warning", "displayName": "深金文字", "canonical": "#66510F", "tonalRamp": ["oklch(15% 0.084 89.7)", "oklch(25% 0.084 89.7)", "oklch(35% 0.084 89.7)", "oklch(45% 0.084 89.7)", "oklch(55% 0.084 89.7)", "oklch(65% 0.084 89.7)", "oklch(75% 0.084 89.7)", "oklch(95% 0.084 89.7)"] },
+      "mint-ink": { "role": "success-text", "displayName": "深薄荷文字", "canonical": "#21483D", "tonalRamp": ["oklch(15% 0.049 172.9)", "oklch(25% 0.049 172.9)", "oklch(35% 0.049 172.9)", "oklch(45% 0.049 172.9)", "oklch(55% 0.049 172.9)", "oklch(65% 0.049 172.9)", "oklch(75% 0.049 172.9)", "oklch(95% 0.049 172.9)"] }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Task title", "purpose": "The main review task heading." },
+      "body": { "displayName": "Workhorse body", "purpose": "Primary content and short explanations." },
+      "label": { "displayName": "Functional label", "purpose": "Status and compact controls; minimum 11px." },
+      "meta": { "displayName": "Supporting metadata", "purpose": "Secondary form hints and rule details at 12px." },
+      "mono": { "displayName": "Path typography", "purpose": "File-system paths and code-like values." }
+    },
+    "shadows": [
+      { "name": "floating-control", "value": "0 5px 9px rgb(52 43 34 / 18%)", "purpose": "Prototype switcher, dialog, and transient feedback." },
+      { "name": "selection-action", "value": "0 5px 16px rgb(52 43 34 / 11%)", "purpose": "Batch action bar." }
+    ],
+    "motion": [
+      { "name": "view-enter", "value": "190ms cubic-bezier(.16, 1, .3, 1)", "purpose": "A single restrained reveal when the review layout changes." },
+      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Removes nonessential animation and transition duration." }
+    ],
+    "breakpoints": [
+      { "name": "tablet", "value": "1050px" },
+      { "name": "mobile", "value": "780px" },
+      { "name": "compact", "value": "540px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Preview Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Opens a confirmation preview for the selected safe-to-move files.",
+      "html": "<button class=\"ds-primary\">Preview 3 files</button>",
+      "css": ".ds-primary { height: 38px; padding: 0 13px; border: 1px solid var(--bark); border-radius: 6px; background: var(--bark); color: var(--paper); font: 600 14px \"Segoe UI Variable\", \"Segoe UI\", system-ui, sans-serif; } .ds-primary:hover { background: #6f4a31; } .ds-primary:focus-visible { outline: 3px solid var(--bark); outline-offset: 2px; } .ds-primary:active { background: #62432f; }"
+    },
+    {
+      "name": "Secondary Scan Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Runs a user-requested scan; secondary to reviewing selected files.",
+      "html": "<button class=\"ds-secondary\">Scan now</button>",
+      "css": ".ds-secondary { height: 38px; padding: 0 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); font: 600 14px \"Segoe UI Variable\", \"Segoe UI\", system-ui, sans-serif; } .ds-secondary:hover { background: #f1f0e9; } .ds-secondary:focus-visible { outline: 3px solid var(--bark); outline-offset: 2px; } .ds-secondary:active { background: var(--mist); }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Filters file records by filename, rule, or destination.",
+      "html": "<label class=\"ds-search\"><span>Search files</span><input type=\"search\" placeholder=\"Search filename or rule\" /></label>",
+      "css": ".ds-search { display: flex; align-items: center; min-height: 36px; padding: 0 10px; border: 1px solid #cccdbf; border-radius: 6px; background: var(--paper); color: var(--muted); font: 400 12px \"Segoe UI Variable\", \"Segoe UI\", system-ui, sans-serif; } .ds-search input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; } .ds-search:focus-within { outline: 3px solid var(--bark); outline-offset: 2px; }"
+    },
+    {
+      "name": "Active Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-selected",
+      "description": "Marks the current work area with a tonal surface rather than a side stripe.",
+      "html": "<button class=\"ds-nav-active\" aria-current=\"page\">Pending files <strong>6</strong></button>",
+      "css": ".ds-nav-active { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 6px; background: var(--mist); color: var(--ink); font: 600 14px \"Segoe UI Variable\", \"Segoe UI\", system-ui, sans-serif; text-align: left; } .ds-nav-active:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; } .ds-nav-active strong { margin-left: auto; font-size: 11px; }"
+    },
+    {
+      "name": "Ready Status",
+      "kind": "chip",
+      "refersTo": "status-ready",
+      "description": "Shows a rule-matched file that is eligible for user preview.",
+      "html": "<span class=\"ds-status-ready\">Ready to preview</span>",
+      "css": ".ds-status-ready { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 7px; border-radius: 4px; background: #d8eee4; color: var(--mint-ink); font: 600 11px/1.4 \"Segoe UI Variable\", \"Segoe UI\", system-ui, sans-serif; }"
+    },
+    {
+      "name": "Review Status",
+      "kind": "chip",
+      "refersTo": "status-review",
+      "description": "Marks conflicting rules that must not be moved automatically.",
+      "html": "<span class=\"ds-status-review\">Needs review</span>",
+      "css": ".ds-status-review { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 7px; border-radius: 4px; background: #f1e8c9; color: var(--gold-ink); font: 600 11px/1.4 \"Segoe UI Variable\", \"Segoe UI\", system-ui, sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "本機檔案工作台（暫定）",
+    "overview": "This is a Windows-oriented workbench for reviewing files, rule matches, and destinations. It favors clear task state and recoverable actions over dashboard decoration. Color roles and shared controls are reusable; the three review layouts remain alternatives, not a selected production layout.",
+    "keyCharacteristics": [
+      "Task-first hierarchy with a persistent navigation rail on wide screens.",
+      "Muted green surfaces balanced by bark-brown actions and distinct status colors.",
+      "Compact, fixed-size workhorse typography with legible labels.",
+      "Flat file rows and route groups; elevation is reserved for overlays and controls."
+    ],
+    "rules": [
+      { "name": "The Status-Color Rule", "body": "Color reinforces a written state label; it never carries the meaning alone.", "section": "colors" },
+      { "name": "The Fixed-Ramp Rule", "body": "Keep interface type sizes stable across widths; reflow layout instead of shrinking text.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "File rows and page sections stay flat; use tonal surfaces and dividers before adding elevation.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do show the filename, matching rule, destination, and state before any move.",
+      "Do pair every colored status with readable text.",
+      "Do keep the preview action visible in the task header and retain batch context below the review list.",
+      "Do use the shared palette roles consistently across all three prototype layouts."
+    ],
+    "donts": [
+      "Don't imply that this UI prototype reads or moves real files.",
+      "Don't auto-move conflicts or files with no matching rule.",
+      "Don't rely on color alone for status, or use functional text smaller than 11px.",
+      "Don't add dashboard hero metrics, nested cards, or decorative gradients to the file-review surface."
+    ]
+  }
+}
