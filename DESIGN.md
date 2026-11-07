@@ -88,35 +88,33 @@ components:
 
 ## Overview
 
-**Creative North Star: "本機檔案工作台（暫定）"**
+**Creative North Star: "PROSet Wireless 發行檔"**
 
-This name is a working description inferred from the product brief, not an approved product or brand name. The interface is a Windows-oriented workbench for reviewing files, rule matches, and destinations. It favors clear task state and recoverable actions over dashboard decoration.
-
-The system has been extracted from a comparative UI prototype. Color roles and shared controls are reusable; the destination-grouped, inspector, and one-file review layouts are alternatives, not a selected production layout.
+A compact Windows utility for scanning Downloads, checking Wi-Fi and Bluetooth version destinations, and explicitly confirming file moves. The interface keeps attention on the current batch, not on configuration or prototype navigation.
 
 **Key Characteristics:**
-- Task-first hierarchy with a persistent navigation rail on wide screens.
-- Muted green surfaces balanced by bark-brown actions and distinct status colors.
-- Compact, fixed-size workhorse typography with legible labels.
-- Flat file rows and route groups; elevation is reserved for overlays and controls.
+- One clear scan action followed by a flat, selectable file list.
+- Muted neutral surfaces, bark-brown actions, and mint success states.
+- Compact, fixed-size typography for filenames and Windows paths.
+- No sidebar, dashboard metrics, or competing navigation.
 
 ## Colors
 
 The user-provided palette supplies the recognizable accents; warm text and pale neutral surfaces keep dense file data readable.
 
 ### Primary
-- **Bark Brown:** navigation, primary actions, and the active filter.
+- **Bark Brown:** primary actions and focus indicators.
 
 ### Secondary
-- **Mint:** ready-to-preview states; paired with dark mint ink for text.
+- **Mint:** successful and ready states; paired with dark mint ink for text.
 
 ### Tertiary
-- **Harvest Gold:** rule review and attention states; use dark gold ink for readable labels.
+- **Harvest Gold:** reserved for review states if added later.
 - **Brick Red:** conflicts and errors, always paired with a written status label.
 
 ### Neutral
-- **Mist Green:** application ground and selected navigation surface.
-- **Soft Paper:** raised content surfaces and controls.
+- **Mist Green:** optional soft application ground.
+- **Soft Paper:** controls and focused content surfaces.
 - **Warm Ink:** primary text.
 - **Muted Ink:** secondary labels and metadata.
 - **Divider:** row boundaries and quiet control outlines.
@@ -147,24 +145,23 @@ The user-provided palette supplies the recognizable accents; warm text and pale 
 
 ## Layout
 
-The wide-screen workbench pairs a 224px navigation rail with a flexible content area. A task header, source and scan summary, filters, then the active review structure establish a consistent reading order. Route groups use two columns when space permits; the inspector and one-file views use split or stacked layouts. The three structures are prototype choices, not a production mandate.
+Use one centered, single-column work area. The heading and scan action lead into a source-to-destination strip that lists each fixed product root, followed by scan status, selectable file rows, one confirmation action, and a collapsed recent-moves section. File rows show the full filename, detected product and version, and complete destination path.
 
-Responsive transitions are implemented at 1050px, 780px, and 540px. Narrow layouts collapse navigation into a horizontal strip and place the main work area in its own scroll region, leaving a reserved bottom zone for the prototype switcher. Summary values, filters, filenames, and actions reflow without horizontal page overflow.
+On narrow screens, stack the route paths and move each destination beneath its filename. Keep controls full-width where needed; paths wrap rather than causing horizontal page overflow.
 
 ## Elevation & Depth
 
 Depth is mostly tonal: paper surfaces, pale green grounds, and thin dividers distinguish work areas. Shadows are limited to floating controls and feedback surfaces.
 
 ### Shadow Vocabulary
-- **Floating control** (`0 5px 9px rgb(52 43 34 / 18%)`): prototype switcher, confirmation dialog, and transient toast.
-- **Selection action** (`0 5px 16px rgb(52 43 34 / 11%)`): the batch action bar only.
+- **Feedback surface** (`0 5px 16px rgb(52 43 34 / 11%)`): transient toast only.
 
 ### Named Rules
 **The Flat-By-Default Rule.** File rows and page sections stay flat; use tonal surfaces and dividers before adding elevation.
 
 ## Shapes
 
-Controls use restrained 6px corners, status badges use 4px corners, and the floating prototype switcher and dialog use 8px corners. Row and section geometry stays rectangular so filenames and destinations align cleanly.
+Controls use restrained 6px corners. File rows and sections remain flat and rectangular so filenames and destinations align cleanly.
 
 ## Components
 
@@ -174,37 +171,30 @@ Controls use restrained 6px corners, status badges use 4px corners, and the floa
 - **Secondary:** paper background, ink text, and a quiet divider outline.
 - **Hover / Focus:** slight tonal change on hover; a visible 3px bark focus outline with offset.
 
-### Chips
-- **Style:** compact status labels with 4px corners and a colored surface.
-- **State:** mint for ready, gold for review, brick for conflict; every state includes text and an icon.
 
 ### Containers
-- **Background:** paper for file groups and panels; mist or surface for the surrounding work area.
-- **Border:** thin divider lines define route groups and rows; no nested card framing.
-- **Shadow:** reserved for floating actions, the prototype switcher, dialogs, and toast feedback.
+- **Background:** use the page surface directly; do not frame each file as a card.
+- **Border:** thin dividers separate file rows and sections.
+- **Shadow:** reserved for transient toast feedback.
 
-### Inputs
-- **Style:** paper field, thin divider outline, 6px corners, and 36px minimum height.
-- **Focus:** visible bark outline; search stays usable while filtering every review structure.
-
-### Navigation
-- **Wide screens:** bark rail with a mist active item and 16px Lucide line icons.
-- **Narrow screens:** horizontal navigation strip with labels and counts; main work content scrolls independently.
+### Selection
+- **Checkboxes:** native, labeled checkboxes select files; all matching files are selected after a successful scan.
+- **Confirmation:** one primary action names the number of files to move.
 
 ### File Rows
-- **Selection:** checkbox, extension marker, filename, metadata, and status remain aligned in a compact row.
-- **Safety:** conflict and unmatched rows are not selectable for movement.
+- **Content:** checkbox, filename, product, version, and destination remain aligned in a compact row.
+- **Safety:** only files with an unambiguous supported version appear in the movable list.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** show the filename, matching rule, destination, and state before any move.
+- **Do** show the filename, detected version, destination, and folder-creation state before any move.
 - **Do** pair every colored status with readable text.
-- **Do** keep the preview action visible in the task header and retain batch context below the review list.
-- **Do** use the shared palette roles consistently across all three prototype layouts.
+- **Do** keep scanning, reviewing, and confirming in one page.
+- **Do** use the shared palette roles consistently.
 
 ### Don't:
-- **Don't** imply that this UI prototype reads or moves real files.
-- **Don't** auto-move conflicts or files with no matching rule.
+- **Don't** imply that an unconfirmed file has moved.
+- **Don't** add configuration navigation or rule-management controls to this single-route surface.
 - **Don't** rely on color alone for status, or use functional text smaller than 11px.
 - **Don't** add dashboard hero metrics, nested cards, or decorative gradients to the file-review surface.

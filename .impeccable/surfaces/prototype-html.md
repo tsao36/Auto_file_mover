@@ -1,32 +1,35 @@
 ---
 version: 1
-slug: "prototype-html"
-primary_target: "prototype.html"
+slug: "workbench-html"
+primary_target: "workbench.html"
 related_targets: []
 ---
 
 # Scope
 
-First-surface prototype for the Windows 11 file-routing app. Operate mode. Desktop-first web UI comparing three materially different ways to review newly scanned files; all sample data and file actions are simulated.
+Fixed-route PROSet release-file workbench for Windows. Operate mode. Scan Wi-Fi and Bluetooth filenames in Downloads, review version-derived destinations, and confirm local moves.
+Fixed-route PROSet Wireless workbench for Windows. Operate mode. Scan Wi-Fi and Bluetooth release filenames in Downloads, review version-derived destinations, and confirm local moves.
 
 # Audience and task
 
-Inferred primary user: a Windows 11 user who downloads email attachments into a dedicated local folder. They need to identify rule matches, verify destinations, and safely approve moving files. The first viewport must make the review task and its safety boundary clear.
+Primary user: a Windows user who downloads Intel PROSet Wireless Wi-Fi and Bluetooth release files into Downloads. They need to verify the product-specific version folder and approve the move.
+Primary user: a Windows user who downloads Intel PROSet Wireless Wi-Fi and Bluetooth release files into Downloads. They need to verify the product-specific version folder and approve the move.
 
 # Constraints
 
-Use the user-provided palette: #825B3D, #99DCC5, #E0E6CD, #B79937, #B33D2D. Keep filenames, counts, destinations, and activity visibly synthetic. The destination picker may retain a browser directory handle and folder name in memory, but must not enumerate or read folder contents, move files, or persist access. Simulated movement history is stored in browser local storage and exportable as JSON; never present it as a real file operation. No email integration or background scheduling in this prototype. Don't imply automatic rules have been enabled.
+Use the user-provided palette: #825B3D, #99DCC5, #E0E6CD, #B79937, #B33D2D. Scan only the top level of Downloads after a manual action. Match case-insensitive `Intel PROSet Wireless Wi-Fi` and `Version Release` phrases and one distinct four-part numeric version. Preview the full destination, select matching files by default, and move only after explicit confirmation. Create a missing major.minor folder and preserve collisions with a numbered suffix. Never read or transmit file contents. Do not add rule creation, GNAI, background scheduling, synthetic data, or prototype layout switching.
+Use the user-provided palette: #825B3D, #99DCC5, #E0E6CD, #B79937, #B33D2D. Scan only the top level of Downloads after a manual action. Match exactly one case-insensitive product phrase (`Intel PROSet Wireless Wi-Fi` or `Intel PROSet Wireless Bluetooth`), `Version Release`, and one distinct four-part numeric version. Wi-Fi uses `PROSet WiFi Wireless/<major.minor>`; Bluetooth uses `BlueTooth/BT <major.minor>`. Preview the full destination, select matching files by default, and move only after explicit confirmation. Create a missing version folder and preserve collisions with a numbered suffix. Never read or transmit file contents. Do not add user rule creation, GNAI, background scheduling, synthetic data, or prototype layout switching.
 
 # Direction contract
 
-THESIS: Compare three distinct ways to review one batch of incoming attachments, proving that each file's match, destination, and safety state can be understood before a simulated move. Refuse a generic dashboard that hides the file-routing task.
+THESIS: Make the single scan-review-confirm workflow obvious and keep every product-specific destination legible before a real local move.
 
-OWN-WORLD: A Windows workbench with precise, compact controls and the supplied mixed palette: E0E6CD is the pale ground, 825B3D carries navigation and primary ink, 99DCC5 marks ready states, B79937 signals review, and B33D2D marks conflicts or failures. Keep repeated file records scannable and avoid nested cards.
+OWN-WORLD: A quiet Windows utility with compact controls, flat file rows, warm ink, bark-brown primary actions, and mint success states. Avoid side navigation, nested cards, dashboard decoration, and competing colors.
 
-STORY: The user sees the synthetic source and scan time, reviews files and rule matches, catches unmatched or conflicting items, selects safe files, and confirms a simulated move. Every variant shows the same facts and in-memory action result.
+STORY: The user sees Downloads and both fixed product roots, scans, reviews product names and version folders, adjusts selection, and confirms a move. Results and recent moves remain visible and recoverable.
 
-FIRST VIEWPORT: At desktop width, show the app rail, a clear “待確認檔案” heading, synthetic-source badge, scan summary, and the variant's dominant review structure. Keep selected count and the primary simulated-move command visible without obscuring file details. At narrow widths, preserve the same hierarchy in a single column.
+FIRST VIEWPORT: Show the product heading, scan action, source and destination paths, scan state, and matching file rows. Keep the confirmation action visible after a scan. At narrow widths, stack route paths and file destinations without horizontal overflow.
 
-FORM: Three switchable structures, drawn from surface concept seed 42e155a4 (dealt indices 5, 2, 7): destination-grouped route lanes; a file queue with a persistent detail inspector; and one-file-at-a-time review. The winning production structure remains undecided until user feedback.
+FORM: One single-column workbench with an inline recent-moves disclosure. The scan is manual; every move requires explicit confirmation.
 
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+FINISH: verify the scan, move, empty, error, and responsive states against the documented product behavior.

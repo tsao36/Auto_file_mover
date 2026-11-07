@@ -2,11 +2,17 @@
   "name": "file-route-prototype",
   "version": "0.1.0",
   "private": true,
-  "description": "Throwaway UI prototype for local attachment routing",
+  "description": "Local PROSet Wi-Fi and Bluetooth release file router",
+  "main": "electron-main.cjs",
   "scripts": {
-    "dev": "node server.js"
+    "dev": "electron .",
+    "web": "node --use-env-proxy --use-system-ca local-server.cjs",
+    "desktop": "electron ."
   },
   "dependencies": {
     "lucide-static": "^0.468.0"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1"
   }
 }
