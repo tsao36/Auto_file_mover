@@ -1,7 +1,21 @@
 node_modules/
+.env
+.env.*
+!.env.example
 .impeccable/review/
 .claude/
 skills-lock.json
 .agents/skills/*
 !.agents/skills/grill-me/
 !.agents/skills/grill-me/**
+
+# Private per-user rules and movement history must remain local.
+.env
+.env.*
+!.env.example
+**/rules.json
+**/history.json
+**/movement-history*.json
+**/file-movement-log*.json
+**/user-rules*.json
+**/user-history*.json
