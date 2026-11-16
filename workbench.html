@@ -24,6 +24,7 @@
       }
 
       * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
       body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--surface); color: var(--ink); font-size: 14px; }
       button, input { font: inherit; }
       button { color: inherit; }
@@ -38,6 +39,7 @@
       .service-dot { width: 7px; height: 7px; border-radius: 50%; background: #34745e; }
       main { width: min(100% - 48px, 920px); margin: 0 auto; padding: 42px 0 56px; }
       .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 25px; }
+      .page-actions { display: flex; flex-wrap: wrap; gap: 8px; }
       h1 { margin: 0; font-size: 27px; line-height: 1.2; font-weight: 680; }
       .page-heading p { margin: 9px 0 0; color: var(--muted); font-size: 13px; }
       .button { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); font-weight: 620; white-space: nowrap; cursor: pointer; }
@@ -54,6 +56,28 @@
       .route-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 11px; font-weight: 650; }
       .route-side code { display: block; color: var(--ink); line-height: 1.5; }
       .route-arrow { color: var(--bark); }
+      .rules { margin-top: 20px; border-bottom: 1px solid var(--line); }
+      .rules summary { display: flex; align-items: center; justify-content: space-between; min-height: 46px; color: var(--ink); font-weight: 620; cursor: pointer; list-style: none; }
+      .rules summary::-webkit-details-marker { display: none; }
+      .rules summary::after { content: "+"; color: var(--muted); font-size: 19px; font-weight: 400; }
+      .rules[open] summary::after { content: "−"; }
+      .rules-list { border-top: 1px solid var(--line); }
+      .rule-item { display: grid; grid-template-columns: minmax(140px, .7fr) minmax(180px, 1fr) minmax(240px, 1.2fr); gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+      .rule-item strong { font-weight: 620; }
+      .rule-item span, .rule-item code { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .rule-prefix { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+      .rule-editor { padding: 16px 0 18px; border-top: 1px solid var(--line); }
+      .rule-editor h2 { margin-bottom: 14px; }
+      .rule-reference-toggle { margin-bottom: 12px; }
+      .rule-examples { margin-bottom: 14px; border-top: 1px solid var(--line); }
+      .rule-examples h3 { margin: 12px 0 0; font-size: 13px; font-weight: 620; }
+      .rule-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+      .rule-field { display: grid; min-width: 0; gap: 6px; }
+      .rule-field.wide { grid-column: 1 / -1; }
+      .rule-field label { color: var(--muted); font-size: 12px; font-weight: 620; }
+      .rule-field input { width: 100%; min-height: 38px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+      .rule-hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+      .rule-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
       .results { margin-top: 35px; }
       .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
       h2 { margin: 0; font-size: 17px; font-weight: 650; }
@@ -95,6 +119,8 @@
         .topbar { padding-right: 20px; padding-left: 20px; }
         main { width: min(100% - 40px, 920px); padding-top: 30px; }
         .page-heading { align-items: flex-start; flex-direction: column; gap: 16px; }
+        .page-actions { width: 100%; }
+        .page-actions .button { flex: 1; }
         .route-strip { grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1.2fr); gap: 10px; }
         .file-head { display: none; }
         .file-row { grid-template-columns: 24px minmax(0, 1fr); gap: 8px 12px; padding: 14px 0; }
@@ -108,6 +134,11 @@
         .route-arrow { transform: rotate(90deg); }
         .section-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
         .scan-summary { text-align: left; }
+        .page-actions { flex-direction: column; }
+        .rule-fields { grid-template-columns: minmax(0, 1fr); }
+        .rule-field.wide { grid-column: auto; }
+        .rule-item { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+        .rule-prefix { grid-column: auto; }
         .action-row { align-items: stretch; flex-direction: column; }
         .action-row .button { width: 100%; }
       }
@@ -130,9 +161,14 @@
           <h1 id="page-title">PROSet Wireless 發行檔</h1>
           <p>檢查符合的檔案與目的地，再確認移動。</p>
         </div>
-        <button class="button primary" id="scan-button" type="button">
-          <span class="icon" style="--icon:url('/icons/scan-search')" aria-hidden="true"></span>掃描 Downloads
-        </button>
+        <div class="page-actions">
+          <button class="button" id="add-rule-button" type="button" aria-controls="rule-editor">
+            <span class="icon" style="--icon:url('/icons/plus')" aria-hidden="true"></span>新增規則
+          </button>
+          <button class="button primary" id="scan-button" type="button">
+            <span class="icon" style="--icon:url('/icons/scan-search')" aria-hidden="true"></span>掃描 Downloads
+          </button>
+        </div>
       </section>
 
       <section class="route-strip" aria-label="整理路徑">
@@ -143,6 +179,42 @@
           <div class="route-destination"><span class="route-label">PROSet Bluetooth</span><code>C:\Users\jtsao1\OneDrive - Intel Corporation\Tech Doc\Wireless SW\BlueTooth</code></div>
         </div>
       </section>
+
+      <details class="rules" id="rules-panel">
+        <summary id="rules-summary">搬移規則</summary>
+        <div class="rules-list" id="rules-list"></div>
+        <form class="rule-editor" id="rule-editor" hidden>
+          <h2>新增搬移規則</h2>
+          <button class="button rule-reference-toggle" id="rule-reference-toggle" type="button" aria-controls="rule-examples" aria-expanded="false">查看現有規則</button>
+          <div class="rule-examples" id="rule-examples" hidden>
+            <h3>目前已儲存的規則</h3>
+            <div class="rules-list" id="rule-examples-list"></div>
+          </div>
+          <div class="rule-fields">
+            <div class="rule-field">
+              <label for="rule-name">規則名稱</label>
+              <input id="rule-name" name="productName" maxlength="80" required autocomplete="off" />
+            </div>
+            <div class="rule-field">
+              <label for="rule-phrase">檔名關鍵詞</label>
+              <input id="rule-phrase" name="productPhrase" minlength="4" maxlength="160" required autocomplete="off" />
+            </div>
+            <div class="rule-field wide">
+              <label for="rule-destination">目的地根資料夾</label>
+              <input id="rule-destination" name="destinationRoot" maxlength="500" placeholder="C:\\Users\\name\\Documents\\Releases" required autocomplete="off" />
+            </div>
+            <div class="rule-field">
+              <label for="rule-prefix">版本資料夾前綴</label>
+              <input id="rule-prefix" name="folderPrefix" maxlength="80" placeholder="選填，例如 BT " autocomplete="off" />
+            </div>
+          </div>
+          <p class="rule-hint">檔名仍須包含「Version Release」和唯一的四段數字版本；目的地子資料夾使用版本號前兩段。</p>
+          <div class="rule-form-actions">
+            <button class="button" id="cancel-rule-button" type="button">取消</button>
+            <button class="button primary" id="save-rule-button" type="submit">儲存規則</button>
+          </div>
+        </form>
+      </details>
 
       <section class="results" aria-labelledby="results-title">
         <div class="section-heading">
@@ -168,9 +240,11 @@
 
     <script>
       const historyKey = "proset-release-router.confirmed-moves.v1";
-      const state = { files: [], selected: new Set(), scanned: false, ignoredCount: 0, results: [], logs: loadHistory(), busy: false, toastTimer: null };
+      const state = { files: [], rules: [], selected: new Set(), scanned: false, ignoredCount: 0, results: [], logs: loadHistory(), busy: false, savingRule: false, toastTimer: null };
       const scanButton = document.getElementById("scan-button");
       const moveButton = document.getElementById("move-button");
+      const rulesPanel = document.getElementById("rules-panel");
+      const ruleEditor = document.getElementById("rule-editor");
 
       function escapeHtml(value) {
         return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
@@ -279,6 +353,60 @@
         }).join("");
       }
 
+      function renderRules() {
+        document.getElementById("rules-summary").textContent = `搬移規則 · ${state.rules.length} 條`;
+        const rulesMarkup = state.rules.map((rule) => `<div class="rule-item">
+          <strong>${escapeHtml(rule.productName)}</strong>
+          <code>${escapeHtml(rule.productPhrase)}</code>
+          <code>${escapeHtml(rule.destinationRoot)}</code>
+          <span class="rule-prefix">版本資料夾前綴：${rule.folderPrefix ? escapeHtml(rule.folderPrefix) : "無"}</span>
+        </div>`).join("");
+        document.getElementById("rules-list").innerHTML = rulesMarkup;
+        document.getElementById("rule-examples-list").innerHTML = rulesMarkup;
+        document.getElementById("destination-roots").innerHTML = state.rules.map((rule) => `<div class="route-destination"><span class="route-label">${escapeHtml(rule.productName)}</span><code>${escapeHtml(rule.destinationRoot)}</code></div>`).join("");
+      }
+
+      async function loadRules() {
+        try {
+          const response = await fetch("/api/rules", { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "無法載入搬移規則。");
+          state.rules = result.rules;
+          renderRules();
+        } catch (error) {
+          showToast(error.message === "Failed to fetch" ? "無法連接本機服務，請重新啟動應用程式。" : error.message, true);
+        }
+      }
+
+      async function saveRule(event) {
+        event.preventDefault();
+        if (state.savingRule) return;
+        state.savingRule = true;
+        const saveButton = document.getElementById("save-rule-button");
+        saveButton.disabled = true;
+        const formData = new FormData(ruleEditor);
+        try {
+          const response = await fetch("/api/rules", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rule: Object.fromEntries(formData) }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "無法新增規則。");
+          state.rules = result.rules;
+          ruleEditor.reset();
+          ruleEditor.hidden = true;
+          rulesPanel.open = true;
+          renderRules();
+          showToast("規則已儲存；掃描後即可預覽符合的檔案。");
+        } catch (error) {
+          showToast(error.message === "Failed to fetch" ? "無法連接本機服務，請重新啟動應用程式。" : error.message, true);
+        } finally {
+          state.savingRule = false;
+          saveButton.disabled = false;
+        }
+      }
+
       function render() {
         renderSummary();
         renderFiles();
@@ -308,7 +436,8 @@
           state.selected = new Set(state.files.map((file) => file.name));
           state.scanned = true;
           document.getElementById("source-path").textContent = result.sourceDirectory;
-          document.getElementById("destination-roots").innerHTML = result.destinationRoots.map((route) => `<div class="route-destination"><span class="route-label">${escapeHtml(route.productName)}</span><code>${escapeHtml(route.path)}</code></div>`).join("");
+          state.rules = result.rules || state.rules;
+          renderRules();
         } catch (error) {
           state.scanned = false;
           showToast(error.message === "Failed to fetch" ? "無法連接本機服務，請重新啟動應用程式。" : error.message, true);
@@ -362,7 +491,25 @@
       });
       scanButton.addEventListener("click", scanFiles);
       moveButton.addEventListener("click", moveSelectedFiles);
+      document.getElementById("add-rule-button").addEventListener("click", () => {
+        rulesPanel.open = true;
+        ruleEditor.hidden = false;
+        document.getElementById("rule-name").focus();
+      });
+      document.getElementById("cancel-rule-button").addEventListener("click", () => {
+        ruleEditor.reset();
+        ruleEditor.hidden = true;
+      });
+      document.getElementById("rule-reference-toggle").addEventListener("click", (event) => {
+        const examples = document.getElementById("rule-examples");
+        const isExpanded = examples.hidden;
+        examples.hidden = !isExpanded;
+        event.currentTarget.setAttribute("aria-expanded", String(isExpanded));
+        event.currentTarget.textContent = isExpanded ? "隱藏現有規則" : "查看現有規則";
+      });
+      ruleEditor.addEventListener("submit", saveRule);
       render();
+      loadRules();
     </script>
   </body>
 </html>

@@ -20,15 +20,15 @@ Move Intel PROSet Wireless Wi-Fi and Bluetooth release files from Downloads into
 
 ## Positioning
 
-A local-first, preview-before-move utility for two fixed PROSet release-file naming patterns. It does not create user rules, inspect file contents, or move files in the background.
+A local-first, preview-before-move utility with two initial PROSet release rules and support for adding local filename-based rules. It does not inspect file contents or move files in the background.
 
 ## Operating Context
 
 - The app runs on Windows and uses a loopback Node.js service for local filesystem access.
 - A user starts each scan manually. The service scans regular files in the top level of `%USERPROFILE%\Downloads`; it does not watch or schedule scans.
-- An eligible filename contains `Intel PROSet Wireless Wi-Fi` and `Version Release`, case-insensitively, plus exactly one distinct four-part numeric version such as `24.80.1.2`. Repeated occurrences of the same version are allowed; multiple distinct versions are ignored.
-- An eligible filename contains exactly one supported product phrase (`Intel PROSet Wireless Wi-Fi` or `Intel PROSet Wireless Bluetooth`) and `Version Release`, case-insensitively, plus exactly one distinct four-part numeric version such as `24.90.0.3`. Repeated occurrences of the same version are allowed; multiple distinct versions are ignored.
-- Wi-Fi files use `%USERPROFILE%\OneDrive - Intel Corporation\Tech Doc\Wireless SW\PROSet WiFi Wireless\<major.minor>`; Bluetooth files use `%USERPROFILE%\OneDrive - Intel Corporation\Tech Doc\Wireless SW\BlueTooth\BT <major.minor>`.
+- An eligible filename contains `Version Release`, exactly one configured product phrase, and exactly one distinct four-part numeric version such as `24.80.1.2`, all case-insensitive except the numeric version. Repeated occurrences of the same version are allowed; multiple distinct versions or matching rules are ignored.
+- Rules are stored in `move-rules.json`; users can add a product phrase, destination root, and version-folder prefix from the workbench. The first two version components determine the destination subfolder.
+- The initial Wi-Fi and Bluetooth rules use `%USERPROFILE%\OneDrive - Intel Corporation\Tech Doc\Wireless SW\PROSet WiFi Wireless\<major.minor>` and `%USERPROFILE%\OneDrive - Intel Corporation\Tech Doc\Wireless SW\BlueTooth\BT <major.minor>`.
 - The scan previews every eligible file and its destination before movement. Users may deselect files and must explicitly confirm the move.
 - Create the version folder when needed. Never overwrite an existing destination file; append a numbered suffix to the incoming filename instead.
 - If a file changes or disappears after preview, do not move it; ask the user to scan again. Other failed moves leave the source file available for retry.
@@ -36,11 +36,10 @@ A local-first, preview-before-move utility for two fixed PROSet release-file nam
 
 ## Capabilities and Constraints
 
-- File matching and destination selection are deterministic and run locally; only filenames and file metadata are read.
-- File matching and destination selection are deterministic and run locally for the fixed Wi-Fi and Bluetooth routes; only filenames and file metadata are read.
-- The move API accepts filenames from the fixed source directory, revalidates the preview metadata, and derives the destination on the server. It does not accept arbitrary source or destination paths.
+- File matching and destination selection are deterministic and run locally using `move-rules.json`; only filenames and file metadata are read.
+- The move API accepts filenames from the configured source directory, revalidates the preview metadata, and derives the destination from a saved rule on the server. It does not accept arbitrary source or destination paths from move requests.
 - Files with no unique matching version remain in Downloads and are not shown as movable.
-- The application has no rule editor, GNAI integration, automatic watcher, schedule, or undo flow.
+- The application has no GNAI integration, automatic watcher, schedule, or undo flow. Rule editing is limited to adding rules; existing rules are maintained in `move-rules.json`.
 - Recent successful moves are kept locally in the browser; this history is informational and does not provide undo.
 
 ## Brand Commitments

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "proset-wifi",
+      "productName": "PROSet Wi-Fi",
+      "productPhrase": "Intel PROSet Wireless Wi-Fi",
+      "destinationRoot": "%USERPROFILE%\\OneDrive - Intel Corporation\\Tech Doc\\Wireless SW\\PROSet WiFi Wireless",
+      "destinationRootEnv": "FILE_ROUTER_DESTINATION_ROOT",
+      "folderPrefix": ""
+    },
+    {
+      "id": "proset-bluetooth",
+      "productName": "PROSet Bluetooth",
+      "productPhrase": "Intel PROSet Wireless Bluetooth",
+      "destinationRoot": "%USERPROFILE%\\OneDrive - Intel Corporation\\Tech Doc\\Wireless SW\\BlueTooth",
+      "destinationRootEnv": "FILE_ROUTER_BLUETOOTH_DESTINATION_ROOT",
+      "folderPrefix": "BT "
+    }
+  ]
+}

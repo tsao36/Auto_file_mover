@@ -145,7 +145,7 @@ The user-provided palette supplies the recognizable accents; warm text and pale 
 
 ## Layout
 
-Use one centered, single-column work area. The heading and scan action lead into a source-to-destination strip that lists each fixed product root, followed by scan status, selectable file rows, one confirmation action, and a collapsed recent-moves section. File rows show the full filename, detected product and version, and complete destination path.
+Use one centered, single-column work area. The heading keeps scanning as the primary action and offers a secondary add-rule action. The source-to-destination strip lists configured product roots; a compact rules disclosure shows each filename phrase and destination-folder prefix, with an inline form for adding a rule. Follow with scan status, selectable file rows, one confirmation action, and a collapsed recent-moves section. File rows show the full filename, detected product and version, and complete destination path.
 
 On narrow screens, stack the route paths and move each destination beneath its filename. Keep controls full-width where needed; paths wrap rather than causing horizontal page overflow.
 
@@ -190,11 +190,11 @@ Controls use restrained 6px corners. File rows and sections remain flat and rect
 ### Do:
 - **Do** show the filename, detected version, destination, and folder-creation state before any move.
 - **Do** pair every colored status with readable text.
-- **Do** keep scanning, reviewing, and confirming in one page.
+- **Do** keep scanning, reviewing, confirming, and adding a rule in one page.
 - **Do** use the shared palette roles consistently.
 
 ### Don't:
 - **Don't** imply that an unconfirmed file has moved.
-- **Don't** add configuration navigation or rule-management controls to this single-route surface.
+- **Don't** add separate configuration navigation or turn rule entry into a multi-step workflow.
 - **Don't** rely on color alone for status, or use functional text smaller than 11px.
 - **Don't** add dashboard hero metrics, nested cards, or decorative gradients to the file-review surface.

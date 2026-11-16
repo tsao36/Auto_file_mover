@@ -1,38 +1,16 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
+const { randomUUID } = require("node:crypto");
 const os = require("node:os");
 const path = require("node:path");
 
 const root = __dirname;
 const homeDirectory = os.homedir();
 const sourceDirectory = path.resolve(process.env.FILE_ROUTER_SOURCE_DIR || path.join(os.homedir(), "Downloads"));
-const routes = [
-  {
-    productName: "PROSet Wi-Fi",
-    productPhrase: "intel proset wireless wi-fi",
-    destinationRoot: path.resolve(process.env.FILE_ROUTER_DESTINATION_ROOT || path.join(
-      homeDirectory,
-      "OneDrive - Intel Corporation",
-      "Tech Doc",
-      "Wireless SW",
-      "PROSet WiFi Wireless",
-    )),
-    folderPrefix: "",
-  },
-  {
-    productName: "PROSet Bluetooth",
-    productPhrase: "intel proset wireless bluetooth",
-    destinationRoot: path.resolve(process.env.FILE_ROUTER_BLUETOOTH_DESTINATION_ROOT || path.join(
-      homeDirectory,
-      "OneDrive - Intel Corporation",
-      "Tech Doc",
-      "Wireless SW",
-      "BlueTooth",
-    )),
-    folderPrefix: "BT ",
-  },
-];
+const rulesFilePath = path.resolve(process.env.FILE_ROUTER_RULES_FILE || path.join(root, "move-rules.json"));
+let ruleRecords = loadRuleRecords();
+let routes = resolveRoutes(ruleRecords);
 const iconNames = new Set([
   "arrow-right",
   "check",
@@ -42,11 +20,74 @@ const iconNames = new Set([
   "folder-open",
   "hard-drive",
   "move-right",
+  "plus",
   "refresh-cw",
   "scan-search",
   "triangle-alert",
   "x",
 ]);
+
+function normalizeRule(rule) {
+  if (!rule || typeof rule !== "object" || Array.isArray(rule)) throw new Error("規則格式無效。");
+  const productName = typeof rule.productName === "string" ? rule.productName.trim() : "";
+  const productPhrase = typeof rule.productPhrase === "string" ? rule.productPhrase.trim() : "";
+  const destinationRoot = typeof rule.destinationRoot === "string" ? rule.destinationRoot.trim() : "";
+  const folderPrefix = typeof rule.folderPrefix === "string" ? rule.folderPrefix : "";
+  const id = typeof rule.id === "string" ? rule.id : "";
+  const destinationRootEnv = typeof rule.destinationRootEnv === "string" ? rule.destinationRootEnv : "";
+
+  if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(id)) throw new Error("規則識別碼無效。");
+  if (!productName || productName.length > 80) throw new Error("規則名稱需為 1 到 80 個字元。");
+  if (productPhrase.length < 4 || productPhrase.length > 160) throw new Error("檔名關鍵詞需為 4 到 160 個字元。");
+  if (!destinationRoot || destinationRoot.length > 500 || /[\0\r\n]/.test(destinationRoot)) throw new Error("目的地路徑無效。");
+  if (!path.isAbsolute(destinationRoot) && !/^%USERPROFILE%[\\/]/i.test(destinationRoot)) throw new Error("目的地必須是絕對路徑。");
+  if (folderPrefix.length > 80 || /[\\/:*?"<>|\0]/.test(folderPrefix)) throw new Error("版本資料夾前綴不可包含路徑分隔符或 Windows 保留字元。");
+  if (destinationRootEnv && !/^[A-Z_][A-Z0-9_]*$/.test(destinationRootEnv)) throw new Error("目的地環境變數名稱無效。");
+
+  return { id, productName, productPhrase, destinationRoot, ...(destinationRootEnv ? { destinationRootEnv } : {}), folderPrefix };
+}
+
+function loadRuleRecords() {
+  const file = JSON.parse(fs.readFileSync(rulesFilePath, "utf8"));
+  if (file.version !== 1 || !Array.isArray(file.rules) || file.rules.length === 0 || file.rules.length > 100) {
+    throw new Error("搬移規則檔格式無效。");
+  }
+  const records = file.rules.map(normalizeRule);
+  const ids = new Set(records.map((rule) => rule.id));
+  const phrases = new Set(records.map((rule) => rule.productPhrase.toLocaleLowerCase("en-US")));
+  if (ids.size !== records.length || phrases.size !== records.length) throw new Error("搬移規則含有重複識別碼或關鍵詞。");
+  return records;
+}
+
+function resolveRoutes(records) {
+  return records.map((rule) => {
+    const configuredRoot = rule.destinationRootEnv && process.env[rule.destinationRootEnv]
+      ? process.env[rule.destinationRootEnv]
+      : rule.destinationRoot.replace(/%USERPROFILE%/gi, homeDirectory);
+    return {
+      ...rule,
+      productPhrase: rule.productPhrase.toLocaleLowerCase("en-US"),
+      destinationRoot: path.resolve(configuredRoot),
+    };
+  });
+}
+
+function publicRules() {
+  return routes.map(({ id, productName, productPhrase, destinationRoot, folderPrefix }) => ({
+    id, productName, productPhrase, destinationRoot, folderPrefix,
+  }));
+}
+
+async function saveRuleRecords(records) {
+  const temporaryPath = `${rulesFilePath}.${randomUUID()}.tmp`;
+  try {
+    await fsp.writeFile(temporaryPath, `${JSON.stringify({ version: 1, rules: records }, null, 2)}\n`, { flag: "wx" });
+    await fsp.rename(temporaryPath, rulesFilePath);
+  } catch (error) {
+    try { await fsp.unlink(temporaryPath); } catch {}
+    throw error;
+  }
+}
 
 function sendJson(response, status, value) {
   response.writeHead(status, {
@@ -85,7 +126,7 @@ function classifyFileName(fileName) {
   const matchingRoutes = routes.filter((route) => normalized.includes(route.productPhrase));
   if (matchingRoutes.length !== 1) return null;
 
-  const versions = [...new Set([...fileName.matchAll(/(?:^|[^0-9.])([0-9]+(?:\.[0-9]+){3})(?=$|[^0-9.])/g)].map((match) => match[1]))];
+  const versions = [...new Set([...fileName.matchAll(/(?:^|[^0-9.])([0-9]+(?:\.[0-9]+){3})(?=$|[^0-9.]|\.[A-Za-z])/g)].map((match) => match[1]))];
   if (versions.length !== 1) return null;
 
   const version = versions[0];
@@ -235,6 +276,61 @@ async function moveOneFile(preview) {
 }
 
 async function handleApi(request, response, pathname) {
+  if (pathname === "/api/rules" && request.method === "GET") {
+    if (!isSameLocalOrigin(request, false)) {
+      sendJson(response, 403, { error: "只允許從本機開啟的頁面讀取規則。" });
+      return;
+    }
+    sendJson(response, 200, { rules: publicRules() });
+    return;
+  }
+
+  if (pathname === "/api/rules" && request.method === "POST") {
+    if (!isSameLocalOrigin(request, true)) {
+      sendJson(response, 403, { error: "只接受本機頁面的規則變更。" });
+      return;
+    }
+    if (!request.headers["content-type"]?.includes("application/json")) {
+      sendJson(response, 415, { error: "請使用 JSON 格式新增規則。" });
+      return;
+    }
+
+    let body;
+    try {
+      body = await readJsonBody(request);
+    } catch {
+      sendJson(response, 400, { error: "規則格式無效，請檢查欄位後再試。" });
+      return;
+    }
+    if (ruleRecords.length >= 100) {
+      sendJson(response, 400, { error: "規則數量已達上限。" });
+      return;
+    }
+
+    let newRule;
+    try {
+      newRule = normalizeRule({ id: randomUUID(), ...body?.rule });
+      if (ruleRecords.some((rule) => rule.productPhrase.toLocaleLowerCase("en-US") === newRule.productPhrase.toLocaleLowerCase("en-US"))) {
+        throw new Error("已有使用相同檔名關鍵詞的規則。");
+      }
+    } catch (error) {
+      sendJson(response, 400, { error: error.message || "規則欄位無效。" });
+      return;
+    }
+
+    const updatedRecords = [...ruleRecords, newRule];
+    try {
+      await saveRuleRecords(updatedRecords);
+    } catch {
+      sendJson(response, 500, { error: "無法儲存規則，請確認應用程式資料夾可寫入。" });
+      return;
+    }
+    ruleRecords = updatedRecords;
+    routes = resolveRoutes(ruleRecords);
+    sendJson(response, 201, { rules: publicRules() });
+    return;
+  }
+
   if (pathname === "/api/scan" && request.method === "GET") {
     if (!isSameLocalOrigin(request, false)) {
       sendJson(response, 403, { error: "只允許從本機開啟的頁面掃描。" });
