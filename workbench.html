@@ -120,9 +120,10 @@
       .history summary::after { content: "+"; color: var(--muted); font-size: 19px; font-weight: 400; }
       .history[open] summary::after { content: "−"; }
       .history-list { border-top: 1px solid var(--line); }
-      .history-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .8fr) auto; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
-      .history-item strong { display: block; overflow-wrap: anywhere; font-weight: 600; }
-      .history-item code, .history-time { color: var(--muted); }
+      .history-item { display: grid; grid-template-columns: minmax(0, .9fr) auto minmax(0, 1.3fr); align-items: start; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+      .history-item strong { display: block; min-width: 0; overflow-wrap: anywhere; font-weight: 600; line-height: 1.45; }
+      .history-item code { min-width: 0; overflow-wrap: anywhere; color: var(--muted); line-height: 1.45; }
+      .history-time { color: var(--muted); white-space: nowrap; }
       .history-empty { padding: 15px 0; color: var(--muted); font-size: 12px; }
       .toast { position: fixed; right: 20px; bottom: 20px; max-width: min(440px, calc(100vw - 40px)); padding: 12px 15px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); box-shadow: 0 5px 16px rgb(52 43 34 / 11%); opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .16s ease, transform .16s ease; }
       .toast.visible { opacity: 1; transform: translateY(0); }
@@ -401,7 +402,7 @@
       }
 
       function findMatchingBaseRule(normalized) {
-        const hasBluetooth = /\bbluetooth\b|\bbt\b/i.test(normalized);
+        const hasBluetooth = /(?:^|[_\-\s])(bluetooth|bt)(?=$|[_\-\s])/i.test(normalized);
         const hasWifi = /wi-?fi/i.test(normalized);
         if (hasBluetooth) {
           return state.rules.find((rule) => /bluetooth/i.test(`${rule.productName} ${rule.destinationRoot} ${rule.productPhrases.join(" ")}`)) || null;
@@ -432,12 +433,18 @@
 
         const leadTokens = beforeVersion.split(/[_\-\s]+/).map((token) => token.trim()).filter(Boolean);
         const firstPhrase = leadTokens.find((token) => token.length >= 4) || (suggestedProductName.length >= 4 ? suggestedProductName : "");
+        const techTokenMatch = stem.match(/(?:^|[_\-\s])(bluetooth|wi-?fi)(?=$|[_\-\s])/i);
+        const techPhrase = techTokenMatch ? techTokenMatch[1] : "";
         const cleanedAfter = afterVersion.replace(/version\s+release/gi, "").replace(/^[_\-\s]+|[_\-\s]+$/g, "");
         const phrases = [];
-        if (firstPhrase) phrases.push(firstPhrase);
-        if (cleanedAfter.length >= 4 && cleanedAfter.toLocaleLowerCase("en-US") !== firstPhrase.toLocaleLowerCase("en-US")) {
-          phrases.push(cleanedAfter);
-        }
+        const addPhrase = (candidate) => {
+          if (candidate.length >= 4 && !phrases.some((item) => item.toLocaleLowerCase("en-US") === candidate.toLocaleLowerCase("en-US"))) {
+            phrases.push(candidate);
+          }
+        };
+        addPhrase(firstPhrase);
+        addPhrase(techPhrase);
+        addPhrase(cleanedAfter);
 
         const requireVersionRelease = normalized.includes("version release");
         const baseRule = findMatchingBaseRule(normalized);
