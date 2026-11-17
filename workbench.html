@@ -26,7 +26,7 @@
       * { box-sizing: border-box; }
       [hidden] { display: none !important; }
       body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--surface); color: var(--ink); font-size: 14px; }
-      button, input { font: inherit; }
+      button, input, textarea { font: inherit; }
       button { color: inherit; }
       button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--bark); outline-offset: 3px; }
       ::selection { color: var(--ink); background: var(--mint); }
@@ -62,10 +62,14 @@
       .rules summary::after { content: "+"; color: var(--muted); font-size: 19px; font-weight: 400; }
       .rules[open] summary::after { content: "−"; }
       .rules-list { border-top: 1px solid var(--line); }
-      .rule-item { display: grid; grid-template-columns: minmax(140px, .7fr) minmax(180px, 1fr) minmax(240px, 1.2fr); gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+      .rule-item { display: grid; grid-template-columns: minmax(140px, .7fr) minmax(180px, 1fr) minmax(240px, 1.2fr) auto; align-items: start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
       .rule-item strong { font-weight: 620; }
       .rule-item span, .rule-item code { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .rule-phrases { display: grid; min-width: 0; gap: 4px; }
       .rule-prefix { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+      .rule-item-actions { display: flex; grid-column: 1 / -1; justify-self: end; gap: 6px; }
+      .rule-item-actions .button { min-height: 32px; padding: 0 9px; font-size: 12px; }
+      .rules-empty { padding: 14px 0; color: var(--muted); font-size: 12px; }
       .rule-editor { padding: 16px 0 18px; border-top: 1px solid var(--line); }
       .rule-editor h2 { margin-bottom: 14px; }
       .rule-reference-toggle { margin-bottom: 12px; }
@@ -75,7 +79,12 @@
       .rule-field { display: grid; min-width: 0; gap: 6px; }
       .rule-field.wide { grid-column: 1 / -1; }
       .rule-field label { color: var(--muted); font-size: 12px; font-weight: 620; }
-      .rule-field input { width: 100%; min-height: 38px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+      .rule-field input:not([type="checkbox"]), .rule-field textarea { width: 100%; min-height: 38px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+      .rule-field textarea { min-height: 82px; resize: vertical; line-height: 1.45; }
+      .rule-field-help { color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .rule-field-help code { color: var(--ink); }
+      .rule-checkbox { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 13px; }
+      .rule-checkbox input { width: 16px; height: 16px; accent-color: var(--bark); }
       .rule-hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
       .rule-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
       .results { margin-top: 35px; }
@@ -184,7 +193,7 @@
         <summary id="rules-summary">搬移規則</summary>
         <div class="rules-list" id="rules-list"></div>
         <form class="rule-editor" id="rule-editor" hidden>
-          <h2>新增搬移規則</h2>
+          <h2 id="rule-editor-title">新增搬移規則</h2>
           <button class="button rule-reference-toggle" id="rule-reference-toggle" type="button" aria-controls="rule-examples" aria-expanded="false">查看現有規則</button>
           <div class="rule-examples" id="rule-examples" hidden>
             <h3>目前已儲存的規則</h3>
@@ -192,23 +201,29 @@
           </div>
           <div class="rule-fields">
             <div class="rule-field">
-              <label for="rule-name">規則名稱</label>
-              <input id="rule-name" name="productName" maxlength="80" required autocomplete="off" />
+              <label for="rule-name">規則名稱（顯示用）</label>
+              <input id="rule-name" name="productName" maxlength="80" placeholder="例如：Performance Data" required autocomplete="off" />
             </div>
             <div class="rule-field">
-              <label for="rule-phrase">檔名關鍵詞</label>
-              <input id="rule-phrase" name="productPhrase" minlength="4" maxlength="160" required autocomplete="off" />
+              <label for="rule-phrases">檔名關鍵詞（每行一個，須全部符合）</label>
+              <textarea id="rule-phrases" name="productPhrases" maxlength="2000" placeholder="Intel PROSetWireless WiFi&#10;Performance Data" required autocomplete="off" aria-describedby="rule-phrases-help"></textarea>
+              <span class="rule-field-help" id="rule-phrases-help">不區分大小寫、順序不限；單一關鍵詞填一行即可。</span>
             </div>
             <div class="rule-field wide">
-              <label for="rule-destination">目的地根資料夾</label>
-              <input id="rule-destination" name="destinationRoot" maxlength="500" placeholder="C:\\Users\\name\\Documents\\Releases" required autocomplete="off" />
+              <label for="rule-destination">目的地資料夾</label>
+              <input id="rule-destination" name="destinationRoot" maxlength="500" placeholder="C:\Users\name\Documents\Releases" required autocomplete="off" aria-describedby="rule-destination-help" />
+              <span class="rule-field-help" id="rule-destination-help">檔案會移動到此資料夾底下的版本子資料夾。</span>
             </div>
-            <div class="rule-field">
-              <label for="rule-prefix">版本資料夾前綴</label>
-              <input id="rule-prefix" name="folderPrefix" maxlength="80" placeholder="選填，例如 BT " autocomplete="off" />
+            <div class="rule-field wide">
+              <label for="rule-prefix">版本子資料夾前綴（選填）</label>
+              <input id="rule-prefix" name="folderPrefix" maxlength="80" placeholder="留空不加前綴；或輸入例如 BT " autocomplete="off" aria-describedby="rule-prefix-help" />
+              <span class="rule-field-help" id="rule-prefix-help">加在版本號前兩段前面。範例：留空會建立 <code>24.90</code>；輸入 <code>BT </code>（含空格）會建立 <code>BT 24.90</code>。</span>
+            </div>
+            <div class="rule-field wide">
+              <label class="rule-checkbox" for="rule-require-version-release"><input id="rule-require-version-release" type="checkbox" checked />檔名必須包含「Version Release」</label>
             </div>
           </div>
-          <p class="rule-hint">檔名仍須包含「Version Release」和唯一的四段數字版本；目的地子資料夾使用版本號前兩段。</p>
+          <p class="rule-hint">所有片語都必須出現在檔名中，不區分大小寫且順序不限。版本可為兩段數字（例如 v24.90，v 可省略）或四段數字；目的地資料夾使用版本號前兩段。不同版本同時出現時不會匹配。</p>
           <div class="rule-form-actions">
             <button class="button" id="cancel-rule-button" type="button">取消</button>
             <button class="button primary" id="save-rule-button" type="submit">儲存規則</button>
@@ -240,7 +255,7 @@
 
     <script>
       const historyKey = "proset-release-router.confirmed-moves.v1";
-      const state = { files: [], rules: [], selected: new Set(), scanned: false, ignoredCount: 0, results: [], logs: loadHistory(), busy: false, savingRule: false, toastTimer: null };
+      const state = { files: [], rules: [], selected: new Set(), scanned: false, ignoredCount: 0, results: [], logs: loadHistory(), busy: false, savingRule: false, editingRuleId: null, toastTimer: null };
       const scanButton = document.getElementById("scan-button");
       const moveButton = document.getElementById("move-button");
       const rulesPanel = document.getElementById("rules-panel");
@@ -355,15 +370,41 @@
 
       function renderRules() {
         document.getElementById("rules-summary").textContent = `搬移規則 · ${state.rules.length} 條`;
-        const rulesMarkup = state.rules.map((rule) => `<div class="rule-item">
+        const ruleMarkup = (rule, showActions) => `<div class="rule-item">
           <strong>${escapeHtml(rule.productName)}</strong>
-          <code>${escapeHtml(rule.productPhrase)}</code>
+          <div class="rule-phrases">${rule.productPhrases.map((phrase) => `<code>${escapeHtml(phrase)}</code>`).join("")}</div>
           <code>${escapeHtml(rule.destinationRoot)}</code>
-          <span class="rule-prefix">版本資料夾前綴：${rule.folderPrefix ? escapeHtml(rule.folderPrefix) : "無"}</span>
-        </div>`).join("");
-        document.getElementById("rules-list").innerHTML = rulesMarkup;
-        document.getElementById("rule-examples-list").innerHTML = rulesMarkup;
+          <span class="rule-prefix">Version Release：${rule.requireVersionRelease ? "必須包含" : "不要求"} · 版本子資料夾：${rule.folderPrefix ? `<code>${escapeHtml(rule.folderPrefix)}24.90</code>（前綴：<code>${escapeHtml(rule.folderPrefix)}</code>）` : `<code>24.90</code>（無前綴）`}</span>
+          ${showActions ? `<div class="rule-item-actions"><button class="button" type="button" data-rule-edit="${escapeHtml(rule.id)}">編輯</button><button class="button" type="button" data-rule-delete="${escapeHtml(rule.id)}">刪除</button></div>` : ""}
+        </div>`;
+        const emptyMarkup = `<div class="rules-empty">尚未設定規則。</div>`;
+        document.getElementById("rules-list").innerHTML = state.rules.length ? state.rules.map((rule) => ruleMarkup(rule, true)).join("") : emptyMarkup;
+        document.getElementById("rule-examples-list").innerHTML = state.rules.length ? state.rules.map((rule) => ruleMarkup(rule, false)).join("") : emptyMarkup;
         document.getElementById("destination-roots").innerHTML = state.rules.map((rule) => `<div class="route-destination"><span class="route-label">${escapeHtml(rule.productName)}</span><code>${escapeHtml(rule.destinationRoot)}</code></div>`).join("");
+      }
+
+      function resetRuleEditor() {
+        ruleEditor.reset();
+        state.editingRuleId = null;
+        document.getElementById("rule-editor-title").textContent = "新增搬移規則";
+        document.getElementById("save-rule-button").textContent = "儲存規則";
+        ruleEditor.hidden = true;
+      }
+
+      function editRule(ruleId) {
+        const rule = state.rules.find((item) => item.id === ruleId);
+        if (!rule) return;
+        state.editingRuleId = rule.id;
+        ruleEditor.elements.namedItem("productName").value = rule.productName;
+        ruleEditor.elements.namedItem("productPhrases").value = rule.productPhrases.join("\n");
+        ruleEditor.elements.namedItem("destinationRoot").value = rule.destinationRoot;
+        ruleEditor.elements.namedItem("folderPrefix").value = rule.folderPrefix;
+        document.getElementById("rule-require-version-release").checked = rule.requireVersionRelease;
+        document.getElementById("rule-editor-title").textContent = "編輯搬移規則";
+        document.getElementById("save-rule-button").textContent = "儲存變更";
+        rulesPanel.open = true;
+        ruleEditor.hidden = false;
+        document.getElementById("rule-name").focus();
       }
 
       async function loadRules() {
@@ -384,26 +425,48 @@
         state.savingRule = true;
         const saveButton = document.getElementById("save-rule-button");
         saveButton.disabled = true;
-        const formData = new FormData(ruleEditor);
+        const formData = Object.fromEntries(new FormData(ruleEditor));
+        formData.productPhrases = formData.productPhrases.split(/\r?\n/).map((phrase) => phrase.trim()).filter(Boolean);
+        formData.requireVersionRelease = document.getElementById("rule-require-version-release").checked;
         try {
-          const response = await fetch("/api/rules", {
-            method: "POST",
+          const method = state.editingRuleId ? "PUT" : "POST";
+          const endpoint = state.editingRuleId ? `/api/rules/${encodeURIComponent(state.editingRuleId)}` : "/api/rules";
+          const response = await fetch(endpoint, {
+            method,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ rule: Object.fromEntries(formData) }),
+            body: JSON.stringify({ rule: formData }),
           });
           const result = await response.json();
-          if (!response.ok) throw new Error(result.error || "無法新增規則。");
+          if (!response.ok) throw new Error(result.error || "無法儲存規則。");
           state.rules = result.rules;
-          ruleEditor.reset();
-          ruleEditor.hidden = true;
+          resetRuleEditor();
           rulesPanel.open = true;
           renderRules();
-          showToast("規則已儲存；掃描後即可預覽符合的檔案。");
+          showToast(method === "PUT" ? "規則已更新；掃描後即可預覽符合的檔案。" : "規則已新增；掃描後即可預覽符合的檔案。");
         } catch (error) {
           showToast(error.message === "Failed to fetch" ? "無法連接本機服務，請重新啟動應用程式。" : error.message, true);
         } finally {
           state.savingRule = false;
           saveButton.disabled = false;
+        }
+      }
+
+      async function deleteRule(ruleId) {
+        const rule = state.rules.find((item) => item.id === ruleId);
+        if (!rule || state.savingRule || !window.confirm(`確定刪除「${rule.productName}」規則嗎？`)) return;
+        state.savingRule = true;
+        try {
+          const response = await fetch(`/api/rules/${encodeURIComponent(ruleId)}`, { method: "DELETE" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "無法刪除規則。");
+          state.rules = result.rules;
+          if (state.editingRuleId === ruleId) resetRuleEditor();
+          renderRules();
+          showToast("規則已刪除。");
+        } catch (error) {
+          showToast(error.message === "Failed to fetch" ? "無法連接本機服務，請重新啟動應用程式。" : error.message, true);
+        } finally {
+          state.savingRule = false;
         }
       }
 
@@ -492,13 +555,19 @@
       scanButton.addEventListener("click", scanFiles);
       moveButton.addEventListener("click", moveSelectedFiles);
       document.getElementById("add-rule-button").addEventListener("click", () => {
+        resetRuleEditor();
         rulesPanel.open = true;
         ruleEditor.hidden = false;
         document.getElementById("rule-name").focus();
       });
       document.getElementById("cancel-rule-button").addEventListener("click", () => {
-        ruleEditor.reset();
-        ruleEditor.hidden = true;
+        resetRuleEditor();
+      });
+      document.getElementById("rules-list").addEventListener("click", (event) => {
+        const editButton = event.target.closest("[data-rule-edit]");
+        const deleteButton = event.target.closest("[data-rule-delete]");
+        if (editButton) editRule(editButton.dataset.ruleEdit);
+        if (deleteButton) void deleteRule(deleteButton.dataset.ruleDelete);
       });
       document.getElementById("rule-reference-toggle").addEventListener("click", (event) => {
         const examples = document.getElementById("rule-examples");

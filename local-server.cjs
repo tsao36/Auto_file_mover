@@ -30,31 +30,40 @@ const iconNames = new Set([
 function normalizeRule(rule) {
   if (!rule || typeof rule !== "object" || Array.isArray(rule)) throw new Error("規則格式無效。");
   const productName = typeof rule.productName === "string" ? rule.productName.trim() : "";
-  const productPhrase = typeof rule.productPhrase === "string" ? rule.productPhrase.trim() : "";
+  const productPhrases = Array.isArray(rule.productPhrases)
+    ? rule.productPhrases.map((phrase) => typeof phrase === "string" ? phrase.trim() : "")
+    : typeof rule.productPhrase === "string" ? [rule.productPhrase.trim()] : [];
   const destinationRoot = typeof rule.destinationRoot === "string" ? rule.destinationRoot.trim() : "";
   const folderPrefix = typeof rule.folderPrefix === "string" ? rule.folderPrefix : "";
   const id = typeof rule.id === "string" ? rule.id : "";
   const destinationRootEnv = typeof rule.destinationRootEnv === "string" ? rule.destinationRootEnv : "";
+  const requireVersionRelease = typeof rule.requireVersionRelease === "boolean" ? rule.requireVersionRelease : true;
 
   if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(id)) throw new Error("規則識別碼無效。");
   if (!productName || productName.length > 80) throw new Error("規則名稱需為 1 到 80 個字元。");
-  if (productPhrase.length < 4 || productPhrase.length > 160) throw new Error("檔名關鍵詞需為 4 到 160 個字元。");
+  if (!productPhrases.length || productPhrases.some((phrase) => phrase.length < 4 || phrase.length > 160)) throw new Error("每個檔名關鍵詞需為 4 到 160 個字元，且至少設定一個。");
+  if (new Set(productPhrases.map((phrase) => phrase.toLocaleLowerCase("en-US"))).size !== productPhrases.length) throw new Error("同一規則不可重複設定相同檔名關鍵詞。");
+  if (Object.hasOwn(rule, "requireVersionRelease") && typeof rule.requireVersionRelease !== "boolean") throw new Error("Version Release 設定無效。");
   if (!destinationRoot || destinationRoot.length > 500 || /[\0\r\n]/.test(destinationRoot)) throw new Error("目的地路徑無效。");
   if (!path.isAbsolute(destinationRoot) && !/^%USERPROFILE%[\\/]/i.test(destinationRoot)) throw new Error("目的地必須是絕對路徑。");
   if (folderPrefix.length > 80 || /[\\/:*?"<>|\0]/.test(folderPrefix)) throw new Error("版本資料夾前綴不可包含路徑分隔符或 Windows 保留字元。");
   if (destinationRootEnv && !/^[A-Z_][A-Z0-9_]*$/.test(destinationRootEnv)) throw new Error("目的地環境變數名稱無效。");
 
-  return { id, productName, productPhrase, destinationRoot, ...(destinationRootEnv ? { destinationRootEnv } : {}), folderPrefix };
+  return { id, productName, productPhrases, destinationRoot, ...(destinationRootEnv ? { destinationRootEnv } : {}), folderPrefix, requireVersionRelease };
+}
+
+function phraseSetKey(phrases) {
+  return phrases.map((phrase) => phrase.toLocaleLowerCase("en-US")).sort().join("\0");
 }
 
 function loadRuleRecords() {
   const file = JSON.parse(fs.readFileSync(rulesFilePath, "utf8"));
-  if (file.version !== 1 || !Array.isArray(file.rules) || file.rules.length === 0 || file.rules.length > 100) {
+  if (file.version !== 1 || !Array.isArray(file.rules) || file.rules.length > 100) {
     throw new Error("搬移規則檔格式無效。");
   }
   const records = file.rules.map(normalizeRule);
   const ids = new Set(records.map((rule) => rule.id));
-  const phrases = new Set(records.map((rule) => rule.productPhrase.toLocaleLowerCase("en-US")));
+  const phrases = new Set(records.map((rule) => phraseSetKey(rule.productPhrases)));
   if (ids.size !== records.length || phrases.size !== records.length) throw new Error("搬移規則含有重複識別碼或關鍵詞。");
   return records;
 }
@@ -66,15 +75,15 @@ function resolveRoutes(records) {
       : rule.destinationRoot.replace(/%USERPROFILE%/gi, homeDirectory);
     return {
       ...rule,
-      productPhrase: rule.productPhrase.toLocaleLowerCase("en-US"),
+      matchPhrases: rule.productPhrases.map((phrase) => phrase.toLocaleLowerCase("en-US")),
       destinationRoot: path.resolve(configuredRoot),
     };
   });
 }
 
 function publicRules() {
-  return routes.map(({ id, productName, productPhrase, destinationRoot, folderPrefix }) => ({
-    id, productName, productPhrase, destinationRoot, folderPrefix,
+  return routes.map(({ id, productName, productPhrases, destinationRoot, folderPrefix, requireVersionRelease }) => ({
+    id, productName, productPhrases, destinationRoot, folderPrefix, requireVersionRelease,
   }));
 }
 
@@ -122,11 +131,12 @@ async function readJsonBody(request) {
 
 function classifyFileName(fileName) {
   const normalized = fileName.toLocaleLowerCase("en-US");
-  if (!normalized.includes("version release")) return null;
-  const matchingRoutes = routes.filter((route) => normalized.includes(route.productPhrase));
+  const matchingRoutes = routes.filter((route) => (!route.requireVersionRelease || normalized.includes("version release"))
+    && route.matchPhrases.every((phrase) => normalized.includes(phrase)));
   if (matchingRoutes.length !== 1) return null;
 
-  const versions = [...new Set([...fileName.matchAll(/(?:^|[^0-9.])([0-9]+(?:\.[0-9]+){3})(?=$|[^0-9.]|\.[A-Za-z])/g)].map((match) => match[1]))];
+  const versionPattern = /(?:^|[^0-9.])v?([0-9]+(?:\.[0-9]+){1}|[0-9]+(?:\.[0-9]+){3})(?=$|[^0-9.]|\.[A-Za-z])/gi;
+  const versions = [...new Set([...fileName.matchAll(versionPattern)].map((match) => match[1]))];
   if (versions.length !== 1) return null;
 
   const version = versions[0];
@@ -310,8 +320,8 @@ async function handleApi(request, response, pathname) {
     let newRule;
     try {
       newRule = normalizeRule({ id: randomUUID(), ...body?.rule });
-      if (ruleRecords.some((rule) => rule.productPhrase.toLocaleLowerCase("en-US") === newRule.productPhrase.toLocaleLowerCase("en-US"))) {
-        throw new Error("已有使用相同檔名關鍵詞的規則。");
+      if (ruleRecords.some((rule) => phraseSetKey(rule.productPhrases) === phraseSetKey(newRule.productPhrases))) {
+        throw new Error("已有使用相同檔名關鍵詞組合的規則。");
       }
     } catch (error) {
       sendJson(response, 400, { error: error.message || "規則欄位無效。" });
@@ -328,6 +338,75 @@ async function handleApi(request, response, pathname) {
     ruleRecords = updatedRecords;
     routes = resolveRoutes(ruleRecords);
     sendJson(response, 201, { rules: publicRules() });
+    return;
+  }
+
+  const rulePathMatch = pathname.match(/^\/api\/rules\/([a-z0-9-]+)$/i);
+  if (rulePathMatch && ["PUT", "DELETE"].includes(request.method)) {
+    if (!isSameLocalOrigin(request, true)) {
+      sendJson(response, 403, { error: "只接受本機頁面的規則變更。" });
+      return;
+    }
+
+    const ruleId = rulePathMatch[1];
+    const existingIndex = ruleRecords.findIndex((rule) => rule.id === ruleId);
+    if (existingIndex < 0) {
+      sendJson(response, 404, { error: "找不到要修改的規則。" });
+      return;
+    }
+
+    let updatedRecords;
+    if (request.method === "DELETE") {
+      updatedRecords = ruleRecords.filter((rule) => rule.id !== ruleId);
+    } else {
+      if (!request.headers["content-type"]?.includes("application/json")) {
+        sendJson(response, 415, { error: "請使用 JSON 格式儲存規則。" });
+        return;
+      }
+
+      let body;
+      try {
+        body = await readJsonBody(request);
+      } catch {
+        sendJson(response, 400, { error: "規則格式無效，請檢查欄位後再試。" });
+        return;
+      }
+
+      let updatedRule;
+      try {
+        const existingRule = ruleRecords[existingIndex];
+        const existingRoute = routes.find((rule) => rule.id === ruleId);
+        const submittedRule = body?.rule || {};
+        const keepDestinationEnvironment = submittedRule.destinationRoot === existingRoute.destinationRoot;
+        updatedRule = normalizeRule({
+          id: ruleId,
+          ...submittedRule,
+          ...(keepDestinationEnvironment ? {
+            destinationRoot: existingRule.destinationRoot,
+            destinationRootEnv: existingRule.destinationRootEnv,
+          } : {}),
+        });
+        if (ruleRecords.some((rule) => rule.id !== ruleId && phraseSetKey(rule.productPhrases) === phraseSetKey(updatedRule.productPhrases))) {
+          throw new Error("已有使用相同檔名關鍵詞組合的規則。");
+        }
+      } catch (error) {
+        sendJson(response, 400, { error: error.message || "規則欄位無效。" });
+        return;
+      }
+
+      updatedRecords = [...ruleRecords];
+      updatedRecords[existingIndex] = updatedRule;
+    }
+
+    try {
+      await saveRuleRecords(updatedRecords);
+    } catch {
+      sendJson(response, 500, { error: "無法儲存規則，請確認應用程式資料夾可寫入。" });
+      return;
+    }
+    ruleRecords = updatedRecords;
+    routes = resolveRoutes(ruleRecords);
+    sendJson(response, 200, { rules: publicRules() });
     return;
   }
 

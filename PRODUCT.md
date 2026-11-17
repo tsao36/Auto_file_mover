@@ -20,14 +20,14 @@ Move Intel PROSet Wireless Wi-Fi and Bluetooth release files from Downloads into
 
 ## Positioning
 
-A local-first, preview-before-move utility with two initial PROSet release rules and support for adding local filename-based rules. It does not inspect file contents or move files in the background.
+A local-first, preview-before-move utility with PROSet release and performance-data rules, plus support for adding local filename-based rules. It does not inspect file contents or move files in the background.
 
 ## Operating Context
 
 - The app runs on Windows and uses a loopback Node.js service for local filesystem access.
 - A user starts each scan manually. The service scans regular files in the top level of `%USERPROFILE%\Downloads`; it does not watch or schedule scans.
-- An eligible filename contains `Version Release`, exactly one configured product phrase, and exactly one distinct four-part numeric version such as `24.80.1.2`, all case-insensitive except the numeric version. Repeated occurrences of the same version are allowed; multiple distinct versions or matching rules are ignored.
-- Rules are stored in `move-rules.json`; users can add a product phrase, destination root, and version-folder prefix from the workbench. The first two version components determine the destination subfolder.
+- An eligible filename matches exactly one rule, contains every required phrase in that rule (case-insensitive, in any order), and has exactly one distinct two-part version (with an optional `v` prefix) or four-part numeric version. Each rule independently controls whether `Version Release` is required; existing rules default to requiring it. Repeated occurrences of the same version are allowed; multiple distinct versions or matching rules are ignored.
+- Rules are stored in `move-rules.json`; users can add, edit, and delete a rule's name, required phrases, destination root, version-folder prefix, and `Version Release` requirement from the workbench. Legacy `productPhrase` values remain supported as one required phrase. The first two version components determine the destination subfolder.
 - The initial Wi-Fi and Bluetooth rules use `%USERPROFILE%\OneDrive - Intel Corporation\Tech Doc\Wireless SW\PROSet WiFi Wireless\<major.minor>` and `%USERPROFILE%\OneDrive - Intel Corporation\Tech Doc\Wireless SW\BlueTooth\BT <major.minor>`.
 - The scan previews every eligible file and its destination before movement. Users may deselect files and must explicitly confirm the move.
 - Create the version folder when needed. Never overwrite an existing destination file; append a numbered suffix to the incoming filename instead.
@@ -39,7 +39,7 @@ A local-first, preview-before-move utility with two initial PROSet release rules
 - File matching and destination selection are deterministic and run locally using `move-rules.json`; only filenames and file metadata are read.
 - The move API accepts filenames from the configured source directory, revalidates the preview metadata, and derives the destination from a saved rule on the server. It does not accept arbitrary source or destination paths from move requests.
 - Files with no unique matching version remain in Downloads and are not shown as movable.
-- The application has no GNAI integration, automatic watcher, schedule, or undo flow. Rule editing is limited to adding rules; existing rules are maintained in `move-rules.json`.
+- The application has no GNAI integration, automatic watcher, schedule, or undo flow. Rule changes made in the workbench are persisted in `move-rules.json`.
 - Recent successful moves are kept locally in the browser; this history is informational and does not provide undo.
 
 ## Brand Commitments
