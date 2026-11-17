@@ -38,18 +38,20 @@ function normalizeRule(rule) {
   const id = typeof rule.id === "string" ? rule.id : "";
   const destinationRootEnv = typeof rule.destinationRootEnv === "string" ? rule.destinationRootEnv : "";
   const requireVersionRelease = typeof rule.requireVersionRelease === "boolean" ? rule.requireVersionRelease : true;
+  const requireVersion = typeof rule.requireVersion === "boolean" ? rule.requireVersion : true;
 
   if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(id)) throw new Error("規則識別碼無效。");
   if (!productName || productName.length > 80) throw new Error("規則名稱需為 1 到 80 個字元。");
   if (!productPhrases.length || productPhrases.some((phrase) => phrase.length < 4 || phrase.length > 160)) throw new Error("每個檔名關鍵詞需為 4 到 160 個字元，且至少設定一個。");
   if (new Set(productPhrases.map((phrase) => phrase.toLocaleLowerCase("en-US"))).size !== productPhrases.length) throw new Error("同一規則不可重複設定相同檔名關鍵詞。");
   if (Object.hasOwn(rule, "requireVersionRelease") && typeof rule.requireVersionRelease !== "boolean") throw new Error("Version Release 設定無效。");
+  if (Object.hasOwn(rule, "requireVersion") && typeof rule.requireVersion !== "boolean") throw new Error("版本號設定無效。");
   if (!destinationRoot || destinationRoot.length > 500 || /[\0\r\n]/.test(destinationRoot)) throw new Error("目的地路徑無效。");
   if (!path.isAbsolute(destinationRoot) && !/^%USERPROFILE%[\\/]/i.test(destinationRoot)) throw new Error("目的地必須是絕對路徑。");
   if (folderPrefix.length > 80 || /[\\/:*?"<>|\0]/.test(folderPrefix)) throw new Error("版本資料夾前綴不可包含路徑分隔符或 Windows 保留字元。");
   if (destinationRootEnv && !/^[A-Z_][A-Z0-9_]*$/.test(destinationRootEnv)) throw new Error("目的地環境變數名稱無效。");
 
-  return { id, productName, productPhrases, destinationRoot, ...(destinationRootEnv ? { destinationRootEnv } : {}), folderPrefix, requireVersionRelease };
+  return { id, productName, productPhrases, destinationRoot, ...(destinationRootEnv ? { destinationRootEnv } : {}), folderPrefix, requireVersionRelease, requireVersion };
 }
 
 function phraseSetKey(phrases) {
@@ -82,8 +84,8 @@ function resolveRoutes(records) {
 }
 
 function publicRules() {
-  return routes.map(({ id, productName, productPhrases, destinationRoot, folderPrefix, requireVersionRelease }) => ({
-    id, productName, productPhrases, destinationRoot, folderPrefix, requireVersionRelease,
+  return routes.map(({ id, productName, productPhrases, destinationRoot, folderPrefix, requireVersionRelease, requireVersion }) => ({
+    id, productName, productPhrases, destinationRoot, folderPrefix, requireVersionRelease, requireVersion,
   }));
 }
 
@@ -135,18 +137,27 @@ function classifyFileName(fileName) {
     && route.matchPhrases.every((phrase) => normalized.includes(phrase)));
   if (matchingRoutes.length !== 1) return null;
 
+  const route = matchingRoutes[0];
   const versionPattern = /(?:^|[^0-9.])v?([0-9]+(?:\.[0-9]+){1}|[0-9]+(?:\.[0-9]+){3})(?=$|[^0-9.]|\.[A-Za-z])/gi;
   const versions = [...new Set([...fileName.matchAll(versionPattern)].map((match) => match[1]))];
-  if (versions.length !== 1) return null;
+  if (route.requireVersion && versions.length !== 1) return null;
 
-  const version = versions[0];
-  const route = matchingRoutes[0];
-  const versionFolder = version.split(".").slice(0, 2).join(".");
+  if (versions.length === 1) {
+    const version = versions[0];
+    const versionFolder = version.split(".").slice(0, 2).join(".");
+    return {
+      productName: route.productName,
+      destinationRoot: route.destinationRoot,
+      version,
+      destinationFolderName: `${route.folderPrefix}${versionFolder}`,
+    };
+  }
+
   return {
     productName: route.productName,
     destinationRoot: route.destinationRoot,
-    version,
-    destinationFolderName: `${route.folderPrefix}${versionFolder}`,
+    version: null,
+    destinationFolderName: "",
   };
 }
 

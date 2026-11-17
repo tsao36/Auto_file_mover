@@ -233,6 +233,9 @@
             <div class="rule-field wide">
               <label class="rule-checkbox" for="rule-require-version-release"><input id="rule-require-version-release" type="checkbox" checked />檔名必須包含「Version Release」</label>
             </div>
+            <div class="rule-field wide">
+              <label class="rule-checkbox" for="rule-require-version"><input id="rule-require-version" type="checkbox" checked />檔名必須包含版本號（未勾選時，無版本號的檔案會直接放入目的地資料夾）</label>
+            </div>
           </div>
           <p class="rule-hint">所有片語都必須出現在檔名中，不區分大小寫且順序不限。版本可為兩段數字（例如 v24.90，v 可省略）或四段數字；目的地資料夾使用版本號前兩段。不同版本同時出現時不會匹配。</p>
           <div class="rule-form-actions">
@@ -329,9 +332,10 @@
         const allSelected = state.files.every((file) => state.selected.has(file.name));
         list.innerHTML = `<div class="file-head"><input id="select-all" type="checkbox" aria-label="全選符合檔案" ${allSelected ? "checked" : ""} /><span>檔案</span><span>目的地</span></div>${state.files.map((file, index) => {
           const versionFolder = file.destinationDirectory.split(/[\\/]/).filter(Boolean).at(-1);
+          const versionLabel = file.version ? `版本 ${escapeHtml(file.version)}` : "無版本號";
           return `<article class="file-row" style="animation-delay:${Math.min(index, 6) * 25}ms">
             <input type="checkbox" data-file-select="${escapeHtml(file.name)}" aria-label="選取 ${escapeHtml(file.name)}" ${state.selected.has(file.name) ? "checked" : ""} />
-            <div><span class="file-name">${escapeHtml(file.name)}</span><span class="file-meta"><span>${escapeHtml(file.productName)}</span><span>版本 ${escapeHtml(file.version)}</span><span>${formatBytes(file.size)}</span></span></div>
+            <div><span class="file-name">${escapeHtml(file.name)}</span><span class="file-meta"><span>${escapeHtml(file.productName)}</span><span>${versionLabel}</span><span>${formatBytes(file.size)}</span></span></div>
             <div class="file-destination"><code>${escapeHtml(file.destinationDirectory)}</code><span class="folder-note ${file.folderWillBeCreated ? "" : "exists"}">${file.folderWillBeCreated ? `移動時建立 ${escapeHtml(versionFolder)}` : `使用 ${escapeHtml(versionFolder)} 資料夾`}</span>${file.nameCollision ? `<span class="folder-note">目的檔名：${escapeHtml(file.destinationFileName)}</span>` : ""}</div>
           </article>`;
         }).join("")}`;
@@ -385,7 +389,7 @@
           <strong>${escapeHtml(rule.productName)}</strong>
           <div class="rule-phrases">${rule.productPhrases.map((phrase) => `<code>${escapeHtml(phrase)}</code>`).join("")}</div>
           <code>${escapeHtml(rule.destinationRoot)}</code>
-          <span class="rule-prefix">Version Release：${rule.requireVersionRelease ? "必須包含" : "不要求"} · 版本子資料夾：${rule.folderPrefix ? `<code>${escapeHtml(rule.folderPrefix)}24.90</code>（前綴：<code>${escapeHtml(rule.folderPrefix)}</code>）` : `<code>24.90</code>（無前綴）`}</span>
+          <span class="rule-prefix">Version Release：${rule.requireVersionRelease ? "必須包含" : "不要求"} · 版本號：${rule.requireVersion ? "必須包含" : "不要求（無版本時直接放入目的地）"} · 版本子資料夾：${rule.folderPrefix ? `<code>${escapeHtml(rule.folderPrefix)}24.90</code>（前綴：<code>${escapeHtml(rule.folderPrefix)}</code>）` : `<code>24.90</code>（無前綴）`}</span>
           ${showActions ? `<div class="rule-item-actions"><button class="button" type="button" data-rule-edit="${escapeHtml(rule.id)}">編輯</button><button class="button" type="button" data-rule-delete="${escapeHtml(rule.id)}">刪除</button></div>` : ""}
         </div>`;
         const emptyMarkup = `<div class="rules-empty">尚未設定規則。</div>`;
@@ -447,11 +451,13 @@
         addPhrase(cleanedAfter);
 
         const requireVersionRelease = normalized.includes("version release");
+        const requireVersion = versions.length === 1;
         const baseRule = findMatchingBaseRule(normalized);
 
         ruleEditor.elements.namedItem("productName").value = suggestedProductName.slice(0, 80);
         ruleEditor.elements.namedItem("productPhrases").value = phrases.join("\n");
         document.getElementById("rule-require-version-release").checked = requireVersionRelease;
+        document.getElementById("rule-require-version").checked = requireVersion;
         if (baseRule) {
           ruleEditor.elements.namedItem("destinationRoot").value = baseRule.destinationRoot;
           ruleEditor.elements.namedItem("folderPrefix").value = baseRule.folderPrefix;
@@ -462,13 +468,22 @@
       function updateSamplePreview() {
         const preview = document.getElementById("rule-sample-preview");
         const sample = document.getElementById("rule-sample-filename").value.trim();
+        const requireVersion = document.getElementById("rule-require-version").checked;
         if (!sample) {
           preview.className = "rule-sample-preview warn";
           preview.textContent = "貼上或輸入欲處理的檔名，系統會自動解析版本並建議各欄位內容。";
           return;
         }
         const { versions } = extractSampleVersion(sample);
+        const destinationRoot = ruleEditor.elements.namedItem("destinationRoot").value.trim().replace(/[\\/]+$/, "");
         if (versions.length !== 1) {
+          if (!requireVersion) {
+            preview.className = "rule-sample-preview";
+            preview.textContent = destinationRoot
+              ? `未偵測到單一版本號 · 將直接放入目的地：${destinationRoot}`
+              : "未偵測到單一版本號 · 將直接放入目的地資料夾（請填寫目的地資料夾）";
+            return;
+          }
           preview.className = "rule-sample-preview warn";
           preview.textContent = versions.length === 0
             ? "未偵測到版本號（需包含兩段或四段數字版本，例如 v24.90）。"
@@ -477,7 +492,6 @@
         }
         const version = versions[0];
         const versionFolder = version.split(".").slice(0, 2).join(".");
-        const destinationRoot = ruleEditor.elements.namedItem("destinationRoot").value.trim().replace(/[\\/]+$/, "");
         const folderPrefix = ruleEditor.elements.namedItem("folderPrefix").value;
         const folderName = `${folderPrefix}${versionFolder}`;
         preview.className = "rule-sample-preview";
@@ -506,6 +520,7 @@
         ruleEditor.elements.namedItem("destinationRoot").value = rule.destinationRoot;
         ruleEditor.elements.namedItem("folderPrefix").value = rule.folderPrefix;
         document.getElementById("rule-require-version-release").checked = rule.requireVersionRelease;
+        document.getElementById("rule-require-version").checked = rule.requireVersion;
         document.getElementById("rule-editor-title").textContent = "編輯搬移規則";
         document.getElementById("save-rule-button").textContent = "儲存變更";
         updateSamplePreview();
@@ -534,6 +549,7 @@
         saveButton.disabled = true;
         const formData = Object.fromEntries(new FormData(ruleEditor));
         formData.productPhrases = formData.productPhrases.split(/\r?\n/).map((phrase) => phrase.trim()).filter(Boolean);
+        formData.requireVersion = document.getElementById("rule-require-version").checked;
         formData.requireVersionRelease = document.getElementById("rule-require-version-release").checked;
         try {
           const method = state.editingRuleId ? "PUT" : "POST";
@@ -671,6 +687,7 @@
         if (event.target.value.trim()) suggestRuleFromFileName(event.target.value);
         else updateSamplePreview();
       });
+      document.getElementById("rule-require-version").addEventListener("change", updateSamplePreview);
       document.getElementById("rule-destination").addEventListener("input", updateSamplePreview);
       document.getElementById("rule-prefix").addEventListener("input", updateSamplePreview);
       document.getElementById("cancel-rule-button").addEventListener("click", () => {

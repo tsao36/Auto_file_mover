@@ -4,18 +4,24 @@
     {
       "id": "proset-wifi",
       "productName": "PROSet Wi-Fi",
-      "productPhrase": "Intel PROSet Wireless Wi-Fi",
+      "productPhrases": [
+        "Intel PROSet Wireless Wi-Fi"
+      ],
       "destinationRoot": "%USERPROFILE%\\OneDrive - Intel Corporation\\Tech Doc\\Wireless SW\\PROSet WiFi Wireless",
       "destinationRootEnv": "FILE_ROUTER_DESTINATION_ROOT",
-      "folderPrefix": ""
+      "folderPrefix": "",
+      "requireVersionRelease": true
     },
     {
       "id": "proset-bluetooth",
       "productName": "PROSet Bluetooth",
-      "productPhrase": "Intel PROSet Wireless Bluetooth",
+      "productPhrases": [
+        "Intel PROSet Wireless Bluetooth"
+      ],
       "destinationRoot": "%USERPROFILE%\\OneDrive - Intel Corporation\\Tech Doc\\Wireless SW\\BlueTooth",
       "destinationRootEnv": "FILE_ROUTER_BLUETOOTH_DESTINATION_ROOT",
-      "folderPrefix": "BT "
+      "folderPrefix": "BT ",
+      "requireVersionRelease": true
     },
     {
       "id": "proset-wifi-performance-data",
@@ -28,6 +34,41 @@
       "destinationRootEnv": "FILE_ROUTER_DESTINATION_ROOT",
       "folderPrefix": "",
       "requireVersionRelease": false
+    },
+    {
+      "id": "de00f6b7-1820-4417-b7a1-99256fc52bb5",
+      "productName": "Casper_OTA_Bluetooth",
+      "productPhrases": [
+        "Casper",
+        "Performance_Data",
+        "bluetooth"
+      ],
+      "destinationRoot": "C:\\Users\\jtsao1\\OneDrive - Intel Corporation\\Tech Doc\\Wireless SW\\BlueTooth",
+      "folderPrefix": "BT",
+      "requireVersionRelease": false
+    },
+    {
+      "id": "5e1b6db7-977c-4a5a-afe2-ec22c7015d85",
+      "productName": "Casper_OTA_WiFi",
+      "productPhrases": [
+        "Casper",
+        "Performance_Data",
+        "wi-Fi"
+      ],
+      "destinationRoot": "C:\\Users\\jtsao1\\OneDrive - Intel Corporation\\Tech Doc\\Wireless SW\\PROSet WiFi Wireless",
+      "folderPrefix": "",
+      "requireVersionRelease": false
+    },
+    {
+      "id": "8928d47e-8bfb-428b-b396-1ec902759611",
+      "productName": "BT_TA",
+      "productPhrases": [
+        "_TA_"
+      ],
+      "destinationRoot": "C:\\Users\\jtsao1\\OneDrive - Intel Corporation\\Tech Doc\\PEAKS\\TA update\\2026",
+      "folderPrefix": "",
+      "requireVersionRelease": false,
+      "requireVersion": false
     }
   ]
 }
