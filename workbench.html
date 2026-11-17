@@ -85,6 +85,11 @@
       .rule-field-help code { color: var(--ink); }
       .rule-checkbox { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 13px; }
       .rule-checkbox input { width: 16px; height: 16px; accent-color: var(--bark); }
+      .rule-sample-box { display: grid; gap: 6px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+      .rule-sample-box label { color: var(--ink); font-size: 12px; font-weight: 650; }
+      .rule-sample-box input { width: 100%; min-height: 38px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+      .rule-sample-preview { color: var(--mint-ink); font-size: 12px; line-height: 1.45; }
+      .rule-sample-preview.warn { color: var(--muted); }
       .rule-hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
       .rule-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
       .results { margin-top: 35px; }
@@ -198,6 +203,11 @@
           <div class="rule-examples" id="rule-examples" hidden>
             <h3>目前已儲存的規則</h3>
             <div class="rules-list" id="rule-examples-list"></div>
+          </div>
+          <div class="rule-sample-box">
+            <label for="rule-sample-filename">範例檔名（輸入後自動建議下方欄位）</label>
+            <input id="rule-sample-filename" type="text" maxlength="260" placeholder="例如：Casper_OTA_Bluetooth_BE211_v24.90_Performance_Data" autocomplete="off" aria-describedby="rule-sample-preview" />
+            <div class="rule-sample-preview warn" id="rule-sample-preview">貼上或輸入欲處理的檔名，系統會自動解析版本並建議各欄位內容。</div>
           </div>
           <div class="rule-fields">
             <div class="rule-field">
@@ -383,11 +393,99 @@
         document.getElementById("destination-roots").innerHTML = state.rules.map((rule) => `<div class="route-destination"><span class="route-label">${escapeHtml(rule.productName)}</span><code>${escapeHtml(rule.destinationRoot)}</code></div>`).join("");
       }
 
+      function extractSampleVersion(fileName) {
+        const versionPattern = /(?:^|[^0-9.])v?([0-9]+(?:\.[0-9]+){1}|[0-9]+(?:\.[0-9]+){3})(?=$|[^0-9.]|\.[A-Za-z])/gi;
+        const matches = [...fileName.matchAll(versionPattern)];
+        const versions = [...new Set(matches.map((match) => match[1]))];
+        return { matches, versions };
+      }
+
+      function findMatchingBaseRule(normalized) {
+        const hasBluetooth = /\bbluetooth\b|\bbt\b/i.test(normalized);
+        const hasWifi = /wi-?fi/i.test(normalized);
+        if (hasBluetooth) {
+          return state.rules.find((rule) => /bluetooth/i.test(`${rule.productName} ${rule.destinationRoot} ${rule.productPhrases.join(" ")}`)) || null;
+        }
+        if (hasWifi) {
+          return state.rules.find((rule) => /wi-?fi/i.test(`${rule.productName} ${rule.destinationRoot} ${rule.productPhrases.join(" ")}`)) || null;
+        }
+        return null;
+      }
+
+      function suggestRuleFromFileName(rawFileName) {
+        const trimmed = rawFileName.trim();
+        if (!trimmed) return;
+        const stem = trimmed.replace(/\.[A-Za-z][A-Za-z0-9]{0,5}$/, "");
+        const normalized = stem.toLocaleLowerCase("en-US");
+        const { matches, versions } = extractSampleVersion(stem);
+        const firstMatch = matches[0];
+        const versionStart = firstMatch ? firstMatch.index + Math.max(0, firstMatch[0].search(/v?[0-9]/i)) : stem.length;
+        const beforeVersion = firstMatch
+          ? stem.slice(0, versionStart).replace(/[_\-\s]+$/, "")
+          : stem;
+        const afterVersion = firstMatch
+          ? stem.slice(firstMatch.index + firstMatch[0].length).replace(/^[_\-\s]+/, "")
+          : "";
+
+        const techCutMatch = beforeVersion.match(/^(.*?)[_\-\s]+(?:bluetooth|wi-?fi|version\s+release|be\d+|ax\d+|ac\d+)/i);
+        const suggestedProductName = (techCutMatch && techCutMatch[1].trim()) || beforeVersion.trim() || stem;
+
+        const leadTokens = beforeVersion.split(/[_\-\s]+/).map((token) => token.trim()).filter(Boolean);
+        const firstPhrase = leadTokens.find((token) => token.length >= 4) || (suggestedProductName.length >= 4 ? suggestedProductName : "");
+        const cleanedAfter = afterVersion.replace(/version\s+release/gi, "").replace(/^[_\-\s]+|[_\-\s]+$/g, "");
+        const phrases = [];
+        if (firstPhrase) phrases.push(firstPhrase);
+        if (cleanedAfter.length >= 4 && cleanedAfter.toLocaleLowerCase("en-US") !== firstPhrase.toLocaleLowerCase("en-US")) {
+          phrases.push(cleanedAfter);
+        }
+
+        const requireVersionRelease = normalized.includes("version release");
+        const baseRule = findMatchingBaseRule(normalized);
+
+        ruleEditor.elements.namedItem("productName").value = suggestedProductName.slice(0, 80);
+        ruleEditor.elements.namedItem("productPhrases").value = phrases.join("\n");
+        document.getElementById("rule-require-version-release").checked = requireVersionRelease;
+        if (baseRule) {
+          ruleEditor.elements.namedItem("destinationRoot").value = baseRule.destinationRoot;
+          ruleEditor.elements.namedItem("folderPrefix").value = baseRule.folderPrefix;
+        }
+        updateSamplePreview();
+      }
+
+      function updateSamplePreview() {
+        const preview = document.getElementById("rule-sample-preview");
+        const sample = document.getElementById("rule-sample-filename").value.trim();
+        if (!sample) {
+          preview.className = "rule-sample-preview warn";
+          preview.textContent = "貼上或輸入欲處理的檔名，系統會自動解析版本並建議各欄位內容。";
+          return;
+        }
+        const { versions } = extractSampleVersion(sample);
+        if (versions.length !== 1) {
+          preview.className = "rule-sample-preview warn";
+          preview.textContent = versions.length === 0
+            ? "未偵測到版本號（需包含兩段或四段數字版本，例如 v24.90）。"
+            : `偵測到多個不同版本（${versions.join("、")}），正式掃描時會略過此檔。`;
+          return;
+        }
+        const version = versions[0];
+        const versionFolder = version.split(".").slice(0, 2).join(".");
+        const destinationRoot = ruleEditor.elements.namedItem("destinationRoot").value.trim().replace(/[\\/]+$/, "");
+        const folderPrefix = ruleEditor.elements.namedItem("folderPrefix").value;
+        const folderName = `${folderPrefix}${versionFolder}`;
+        preview.className = "rule-sample-preview";
+        preview.textContent = destinationRoot
+          ? `偵測版本：${version} · 實際目的地：${destinationRoot}\\${folderName}`
+          : `偵測版本：${version} · 建議版本資料夾：${folderName}（請填寫目的地資料夾）`;
+      }
+
       function resetRuleEditor() {
         ruleEditor.reset();
         state.editingRuleId = null;
         document.getElementById("rule-editor-title").textContent = "新增搬移規則";
         document.getElementById("save-rule-button").textContent = "儲存規則";
+        document.getElementById("rule-sample-filename").value = "";
+        updateSamplePreview();
         ruleEditor.hidden = true;
       }
 
@@ -395,6 +493,7 @@
         const rule = state.rules.find((item) => item.id === ruleId);
         if (!rule) return;
         state.editingRuleId = rule.id;
+        document.getElementById("rule-sample-filename").value = "";
         ruleEditor.elements.namedItem("productName").value = rule.productName;
         ruleEditor.elements.namedItem("productPhrases").value = rule.productPhrases.join("\n");
         ruleEditor.elements.namedItem("destinationRoot").value = rule.destinationRoot;
@@ -402,6 +501,7 @@
         document.getElementById("rule-require-version-release").checked = rule.requireVersionRelease;
         document.getElementById("rule-editor-title").textContent = "編輯搬移規則";
         document.getElementById("save-rule-button").textContent = "儲存變更";
+        updateSamplePreview();
         rulesPanel.open = true;
         ruleEditor.hidden = false;
         document.getElementById("rule-name").focus();
@@ -558,8 +658,14 @@
         resetRuleEditor();
         rulesPanel.open = true;
         ruleEditor.hidden = false;
-        document.getElementById("rule-name").focus();
+        document.getElementById("rule-sample-filename").focus();
       });
+      document.getElementById("rule-sample-filename").addEventListener("input", (event) => {
+        if (event.target.value.trim()) suggestRuleFromFileName(event.target.value);
+        else updateSamplePreview();
+      });
+      document.getElementById("rule-destination").addEventListener("input", updateSamplePreview);
+      document.getElementById("rule-prefix").addEventListener("input", updateSamplePreview);
       document.getElementById("cancel-rule-button").addEventListener("click", () => {
         resetRuleEditor();
       });
